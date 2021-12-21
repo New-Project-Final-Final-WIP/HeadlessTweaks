@@ -106,6 +106,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ImpulsePassMethods.cs" />
     <Compile Include="ImpulsePass.cs" />
     <Compile Include="DiscordIntegration.cs" />
     <Compile Include="Configuration.cs" />
