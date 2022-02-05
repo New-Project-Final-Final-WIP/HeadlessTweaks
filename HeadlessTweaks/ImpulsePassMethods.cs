@@ -1,5 +1,7 @@
 ﻿using FrooxEngine;
 using BaseX;
+using System;
+
 namespace HeadlessTweaks
 {
     public class ImpulsePassMethods
@@ -17,12 +19,31 @@ namespace HeadlessTweaks
             Userspace.SaveWorldAuto(world, SaveType.Overwrite, false);
             return;
         }
+        public static void ItHappened(World world, Slot parameterSlot)
+        {
+            //User user = Utilities.FetchParameter<User>(parameterSlot, "User");
+            DiscordIntegration.DiscordHelper.sendMessage("@everyone, It happened.\nPlease help."); //+((user!=null)?$"\n\n   Sincerely, {user.Name}":"")
+            return;
+        }
+        public static void RegisterLogOutput(World world, Slot parameterSlot)
+        {
+            LogOutputDisplay.addLogOutput(parameterSlot);
+        }
     }
 
 
     public class Utilities
     {
         [GenericTypes(GenericTypes.Group.NeosPrimitives, new System.Type[] { typeof(Slot), typeof(User) })]
+        public static bool TrySetParameter<T>(Slot slot, string variableName, in T value)
+        {
+            DynamicVariableSpace space = slot.FindSpace("HeadlessExec");
+            if (space != null)
+            {
+                return space.TryWriteValue<T>(variableName, value);
+            }
+            return false;
+        }
         public static bool FetchParameter<T>(Slot slot, string variableName, out T value)
         {
             value = Coder<T>.Default;

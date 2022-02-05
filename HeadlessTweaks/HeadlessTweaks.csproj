@@ -62,6 +62,9 @@
     <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=5.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.5.0.0\lib\net461\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
     </Reference>
+    <Reference Include="Neos">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\NeosVR\HeadlessClient\Neos.exe</HintPath>
+    </Reference>
     <Reference Include="NeosModLoader">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Libraries\NeosModLoader.dll</HintPath>
     </Reference>
@@ -106,6 +109,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LogOutputDisplay.cs" />
+    <Compile Include="NewHeadlessCommands.cs" />
     <Compile Include="ImpulsePassMethods.cs" />
     <Compile Include="ImpulsePass.cs" />
     <Compile Include="DiscordIntegration.cs" />

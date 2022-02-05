@@ -4,6 +4,8 @@ using System;
 using Discord;
 using System.Collections.Generic;
 using Discord.Webhook;
+using CloudX;
+
 namespace HeadlessTweaks
 {
     class DiscordIntegration
@@ -58,17 +60,17 @@ namespace HeadlessTweaks
         {
             public static void WorldCreated(World world)
             {
-                EmbedHelper.sendWorldMessage(world, "Started", new Color(r: 0.0f, g: 0.8f, b: 0.8f));
+                DiscordHelper.sendWorldEmbed(world, "Started", new Color(r: 0.0f, g: 0.8f, b: 0.8f));
                 return;
             }
             public static void WorldSaved(World world)
             {
-                EmbedHelper.sendWorldMessage(world, "Saved", new Color(r: 0.8f, g: 0.8f, b: 0.0f));
+                DiscordHelper.sendWorldEmbed(world, "Saved", new Color(r: 0.8f, g: 0.8f, b: 0.0f));
                 return;
             }
             public static void WorldDestroyed(World world)
             {
-                EmbedHelper.sendWorldMessage(world, "Closing", new Color(r: 0.8f, g: 0.2f, b: 0.0f));
+                DiscordHelper.sendWorldEmbed(world, "Closing", new Color(r: 0.8f, g: 0.2f, b: 0.0f));
                 return;
             }
             public static void UserJoined(User user)
@@ -79,56 +81,54 @@ namespace HeadlessTweaks
 
                     if (user.World.SessionId == "S-U-New-Headless:New_Scene")
                     {
-                        EmbedHelper.sendUserMessage(user, "Joined", new Color(r: 0.0f, g: 0.8f, b: 0.0f), bernie: true);
+                        DiscordHelper.sendUserEmbed(user, "Joined", new Color(r: 0.0f, g: 0.8f, b: 0.0f), bernie: true);
                     }
                     if (user.HeadDevice == HeadOutputDevice.Headless) return;
                 }
-                EmbedHelper.sendUserMessage(user, "Joined", new Color(r: 0.0f, g: 0.8f, b: 0.0f));
+                DiscordHelper.sendUserEmbed(user, "Joined", new Color(r: 0.0f, g: 0.8f, b: 0.0f));
             }
             public static void UserLeft(User user)
             {
-                EmbedHelper.sendUserMessage(user, "Left", new Color(r: 0.8f, g: 0.0f, b: 0.0f));
+                DiscordHelper.sendUserEmbed(user, "Left", new Color(r: 0.8f, g: 0.0f, b: 0.0f));
             }
             public static void HeadlessStartup()
             {
-                EmbedHelper.sendHeadlessMessage(Engine.Current, "Headless [{1}] started with version {0}", new Color(r: 0.0f, g: 0.0f, b: 1.0f));
+                DiscordHelper.sendStartEmbed(Engine.Current, "Headless [{1}] started with version {0}", new Color(r: 0.0f, g: 0.0f, b: 1.0f));
             }
             public static void HeadlessShutdown()
             {
 
-                EmbedHelper.sendHeadlessMessage(Engine.Current, "Shutting down Headless [{1}]", new Color(r: 1.0f, g: 0.0f, b: 0.0f));
+                DiscordHelper.sendStartEmbed(Engine.Current, "Shutting down Headless [{1}]", new Color(r: 1.0f, g: 0.0f, b: 0.0f));
             }
         }
-        class EmbedHelper 
+        public class DiscordHelper 
         {
-            public static void sendHeadlessMessage(Engine engine, String action, Color color)
+            public static void sendMessage(String message)
+            {
+                discordWebhook.SendMessageAsync(text: message, username: HeadlessTweaks.config.DiscordWebhookUsername, avatarUrl: HeadlessTweaks.config.DiscordWebhookAvatar);
+            }
+            public static void sendEmbed(String message, Color color)
             {
                 List<Embed> embedList = new List<Embed>();
                 var embed = new EmbedBuilder
                 {
-                    Description = String.Format(action, engine.VersionString, engine.LocalUserName),
+                    Description = message,
                     Color = color
                 };
                 embedList.Add(embed.Build());
                 discordWebhook.SendMessageAsync(username: HeadlessTweaks.config.DiscordWebhookUsername, avatarUrl: HeadlessTweaks.config.DiscordWebhookAvatar, embeds: embedList);
             }
-            public static void sendWorldMessage(World world, String action, Color color)
+            public static void sendStartEmbed(Engine engine, String action, Color color)
+            {
+                sendEmbed(String.Format(action, engine.VersionString, engine.LocalUserName), color);
+            }
+            public static void sendWorldEmbed(World world, String action, Color color)
             {
                 string SessionName = world.Name;
                 if (world.SessionId == "S-U-New-Headless:New_Scene") SessionName = "New Scene";
-                List<Embed> embedList = new List<Embed>();
-                var embed = new EmbedBuilder
-                {
-                    // Embed property can be set within object initializer
-                    //Title = "Session " + action,
-                    Description = String.Format("{0} [{1}] {2}", SessionName, world.HostUser.UserName, action),
-                    Color = color
-                };
-                //embed.WithCurrentTimestamp();
-                embedList.Add(embed.Build());
-                discordWebhook.SendMessageAsync(username: HeadlessTweaks.config.DiscordWebhookUsername, avatarUrl: HeadlessTweaks.config.DiscordWebhookAvatar, embeds: embedList);
+                sendEmbed(String.Format("{0} [{1}] {2}", SessionName, world.HostUser.UserName, action), color);
             }
-            public static async void sendUserMessage(User user, String action, Color color, bool bernie = false)
+            public static async void sendUserEmbed(User user, String action, Color color, bool bernie = false)
             {
                 string userName = user.UserName;
                 string userId = user.UserID;
@@ -147,11 +147,24 @@ namespace HeadlessTweaks
                     Color = color
                 };
                 CloudX.Shared.User cloudUser = (await user.Cloud.GetUser(userId).ConfigureAwait(false))?.Entity;
-                string userIcon = cloudUser?.Profile?.IconUrl;
-                if (CloudX.Shared.CloudXInterface.IsValidNeosDBUri(new Uri(userIcon))) // a
+                CloudX.Shared.UserProfile profile = cloudUser?.Profile;
+
+
+                Uri userIconUri = CloudX.Shared.CloudXInterface.TryFromString((profile != null) ? profile.IconUrl : null);
+                if (userIconUri == null)
                 {
-                    userIcon = CloudX.Shared.CloudXInterface.NeosDBToHttp(new Uri(userIcon), CloudX.Shared.NeosDB_Endpoint.CDN).AbsoluteUri;
+                    userIconUri = NeosAssets.Graphics.Thumbnails.AnonymousHeadset;
                 }
+
+
+                string userIcon = null;// = cloudUser?.Profile?.IconUrl;
+                // if(userIcon!=null)
+                if (userIconUri != null && CloudX.Shared.CloudXInterface.IsValidNeosDBUri(userIconUri)) // a
+                {
+                    userIcon = CloudX.Shared.CloudXInterface.NeosDBToHttp(userIconUri, CloudX.Shared.NeosDB_Endpoint.CDN).AbsoluteUri;
+                }
+
+
                 string userUri = null;
                 if (!string.IsNullOrWhiteSpace(userId)) userUri = CloudX.Shared.CloudXInterface.NEOS_API + "/api/users/" + userId;
 
