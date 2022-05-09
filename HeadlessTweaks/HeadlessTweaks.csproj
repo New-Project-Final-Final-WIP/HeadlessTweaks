@@ -110,12 +110,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LogOutputDisplay.cs" />
+    <Compile Include="MessageCommands.cs" />
     <Compile Include="NewHeadlessCommands.cs" />
     <Compile Include="ImpulsePassMethods.cs" />
     <Compile Include="ImpulsePass.cs" />
     <Compile Include="DiscordIntegration.cs" />
-    <Compile Include="Configuration.cs" />
     <Compile Include="HeadlessTweaks.cs" />
+    <Compile Include="PermissionLevel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -124,7 +125,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetDir)\$(TargetFileName)" "C:\Program Files (x86)\Steam\steamapps\common\NeosVR\nml_mods\"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetDir)\$(TargetFileName)" "C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Tools\HeadlessClient\nml_mods\"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <StartAction>Program</StartAction>

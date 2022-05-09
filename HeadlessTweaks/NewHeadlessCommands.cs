@@ -1,17 +1,14 @@
 ﻿using HarmonyLib;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using NeosHeadless;
-using FrooxEngine;
+
 namespace HeadlessTweaks
 {
     class NewHeadlessCommands
     {
         internal static void Init(Harmony harmony)
         {
+            HeadlessTweaks.Msg("NewHeadlessCommands.Init");
             var yeah = typeof(NeosCommands).GetMethod("SetupCommonCommands");
             var what = typeof(NewCommands).GetMethod("Postfix");
 
@@ -23,9 +20,37 @@ namespace HeadlessTweaks
         {
             public static void Postfix(CommandHandler handler)
             {
-                if (HeadlessTweaks.config.UseDiscordWebhook)
+                // Set user permission command
+                HeadlessTweaks.Msg("Setting up user permission command");
+                handler.RegisterCommand(new GenericCommand("setUserPermission", "Sets a user's permission level", "<user> <permission>", async (h, world, args) =>
                 {
-                    handler.RegisterCommand((ICommand)new GenericCommand("sendToDiscord", "Sends a message to discord", "<message>", (AsyncCommandAction)(async (h, world, args) =>
+                    if (args.Count != 2)
+                    {
+                        HeadlessTweaks.Warn("Please include a user and a permission level");
+                        return;
+                    }
+
+                    var user = args[0];
+                    var permission = args[1];
+
+                    if (Enum.TryParse(permission, true, out PermissionLevel levelEnum))
+                    {
+                        var levels = HeadlessTweaks.config.GetValue(HeadlessTweaks.PermissionLevels);
+                        levels[user] = levelEnum;
+                        HeadlessTweaks.config.Set(HeadlessTweaks.PermissionLevels, levels);
+                        HeadlessTweaks.config.Save();
+
+                        HeadlessTweaks.Msg("Permission level set to " + levelEnum);
+                    }
+                    else
+                    {
+                        HeadlessTweaks.Warn("Invalid permission level");
+                    }
+                }));
+                
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook))
+                {
+                    handler.RegisterCommand(new GenericCommand("sendToDiscord", "Sends a message to discord", "<message>", (async (h, world, args) =>
                     {
                         if (args.Count == 0)
                         {

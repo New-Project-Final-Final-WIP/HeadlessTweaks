@@ -15,14 +15,14 @@ namespace HeadlessTweaks
         public static void Init(Harmony harmony)
         {
 
-            if (!HeadlessTweaks.config.UseDiscordWebhook) return;
-            if (string.IsNullOrWhiteSpace(HeadlessTweaks.config.DiscordWebhookID) || string.IsNullOrWhiteSpace(HeadlessTweaks.config.DiscordWebhookKey))
+            if (!HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook)) return;
+            if (string.IsNullOrWhiteSpace(HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookID)) || string.IsNullOrWhiteSpace(HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookKey)))
             {
                 HeadlessTweaks.Error("Webhook Key or Id is not defined in config");
                 return;
             }
             HeadlessTweaks.Msg("Initializing DiscordIntegration");
-            discordWebhook = new DiscordWebhookClient("https://discord.com/api/webhooks/" + HeadlessTweaks.config.DiscordWebhookID + "/" + HeadlessTweaks.config.DiscordWebhookKey);
+            discordWebhook = new DiscordWebhookClient("https://discord.com/api/webhooks/" + HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookID) + "/" + HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookKey));
 
             var startSession = typeof(World).GetMethod("StartSession");
             var saveWorld = typeof(World).GetMethod("SaveWorld");
@@ -105,7 +105,7 @@ namespace HeadlessTweaks
         {
             public static void sendMessage(String message)
             {
-                discordWebhook.SendMessageAsync(text: message, username: HeadlessTweaks.config.DiscordWebhookUsername, avatarUrl: HeadlessTweaks.config.DiscordWebhookAvatar);
+                discordWebhook.SendMessageAsync(text: message, username: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookUsername), avatarUrl: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookAvatar));
             }
             public static void sendEmbed(String message, Color color)
             {
@@ -116,7 +116,7 @@ namespace HeadlessTweaks
                     Color = color
                 };
                 embedList.Add(embed.Build());
-                discordWebhook.SendMessageAsync(username: HeadlessTweaks.config.DiscordWebhookUsername, avatarUrl: HeadlessTweaks.config.DiscordWebhookAvatar, embeds: embedList);
+                discordWebhook.SendMessageAsync(username: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookUsername), avatarUrl: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookAvatar), embeds: embedList);
             }
             public static void sendStartEmbed(Engine engine, String action, Color color)
             {
@@ -171,7 +171,7 @@ namespace HeadlessTweaks
                 embed.WithAuthor(name: userName, iconUrl: userIcon, url: userUri);
                 //embed.WithCurrentTimestamp();
                 embedList.Add(embed.Build());
-                await discordWebhook.SendMessageAsync(username: HeadlessTweaks.config.DiscordWebhookUsername, avatarUrl: HeadlessTweaks.config.DiscordWebhookAvatar, embeds: embedList);
+                await discordWebhook.SendMessageAsync(username: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookUsername), avatarUrl: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookAvatar), embeds: embedList);
             }
         }
     }
