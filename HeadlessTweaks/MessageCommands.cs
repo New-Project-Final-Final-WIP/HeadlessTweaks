@@ -10,6 +10,7 @@ using CloudX.Shared;
 using BaseX;
 
 using static CloudX.Shared.MessageManager;
+using System.Reflection.Emit;
 
 namespace HeadlessTweaks
 {
@@ -76,7 +77,17 @@ namespace HeadlessTweaks
                             return;
                         }
                         HeadlessTweaks.Msg("Executing command: " + cmd);
-                        cmdMethod.Invoke(null, new object[] { userMessages, obj, cmdArgs });
+                        // Try to execute command and send error message if it fails
+                        try
+                        {
+                            cmdMethod.Invoke(null, new object[] { userMessages, obj, cmdArgs });
+                        }
+                        catch (Exception e)
+                        {
+                            // HeadlessTweaks.Error failed to execute user's command and send error message
+                            HeadlessTweaks.Error($"Failed to execute command from {obj.SenderId}: " + cmd, e);
+                            userMessages.SendTextMessage("Error: " + e.Message);
+                        }
                     }
                     return;
                 default:
@@ -139,7 +150,6 @@ namespace HeadlessTweaks
 
 
 
-
         private static UserMessages getUserMessages(string userId)
         {
             return Engine.Current.Cloud.Messages.GetUserMessages(userId);
@@ -150,7 +160,63 @@ namespace HeadlessTweaks
             return HeadlessTweaks.config.GetValue(HeadlessTweaks.PermissionLevels).FirstOrDefault(x => x.Key == userId).Value;
         }
 
+        private static bool canUserJoin(World world, string userId)
+        {
+            return getUserPermissionLevel(userId) > PermissionLevel.None || world.IsUserAllowed(userId);
+        }
 
+        private static World GetWorld(UserMessages userMessages, string worldName)
+        {
+            var worlds = Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld);
+            var world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
+            if (world == null)
+            {
+                if (int.TryParse(worldName, out var result))
+                {
+                    var worldList = worlds.ToList();
+                    if (result < 0 || result >= worldList.Count)
+                    {
+                        userMessages.SendTextMessage("World index out of range");
+                        return null;
+                    }
+                    world = worldList[result];
+                }
+                else
+                {
+                    userMessages.SendTextMessage("No world found with the name " + worldName);
+                    return null;
+                }
+            }
+            return world;
+        }
+
+        // Get world or user's world
+        // helper function for /getWorld and /getUserWorld
+        private static World GetWorldOrUserWorld(UserMessages userMessages, string worldName, string userId, bool defaultFocused = false)
+        {
+            World world = null;
+            // if world is null or blank space
+            if (string.IsNullOrWhiteSpace(worldName))
+            { // if no world name given, get the user's world
+                var userWorlds = Engine.Current.WorldManager.Worlds.Where(w => w.GetUserByUserId(userId) != null);
+                if (userWorlds.Count() == 0)
+                {
+                    world = userWorlds.FirstOrDefault((w) => w.GetUserByUserId(userId).IsPresentInWorld);
+                }
+                if (world == null)
+                {  // if no world found tell the user
+                    if (!defaultFocused)
+                    {
+                        userMessages.SendTextMessage("User is not in a world");
+                        return null;
+                    }
+                    world = Engine.Current.WorldManager.FocusedWorld;
+                }
+                return world;
+            }
+            world = GetWorld(userMessages, worldName);
+            return world;
+        }
 
 
         // Commands
@@ -179,16 +245,18 @@ namespace HeadlessTweaks
             [Command("reqInvite", "Requests an invite to a world")]
             public static void reqinvite(UserMessages userMessages, Message obj, string[] args)
             {
+                World world = null;
                 if (args.Length < 1)
                 {
-                    userMessages.SendInviteMessage(Engine.Current.WorldManager.FocusedWorld.GetSessionInfo());
-                    return;
+                    world = Engine.Current.WorldManager.FocusedWorld;
+                    goto Invite;
+                    
                 }
                 string worldName = string.Join(" ", args);
                 worldName.Trim();
                 var worlds = Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld);
 
-                World world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
+                world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
                 if (world == null)
                 {
                     if (int.TryParse(worldName, out var result))
@@ -205,6 +273,15 @@ namespace HeadlessTweaks
                         return;
                     }
                 }
+                
+                Invite:
+                // check if user can join world
+                if (!canUserJoin(world, obj.SenderId))
+                {
+                    userMessages.SendTextMessage("You can't join " + world.Name);
+                    return;
+                }
+                world.AllowUserToJoin(obj.SenderId);
                 userMessages.SendInviteMessage(world.GetSessionInfo());
             }
 
@@ -292,99 +369,19 @@ namespace HeadlessTweaks
             public static async void saveworld(UserMessages userMessages, Message obj, string[] args)
             {
                 World world = null;
-                if (args.Length < 1)
-                {
-                    var userWorlds = Engine.Current.WorldManager.Worlds.Where(w => w.GetUserByUserId(obj.SenderId) != null);
-                    if (userWorlds.Count() != 0)
-                    {
-                        world = userWorlds.FirstOrDefault((w) => w.GetUserByUserId(obj.SenderId).IsPresentInWorld);
-                    }
-                    if (world == null)
-                    {  // if no world found tell the user
-                        userMessages.SendTextMessage("You are not in a world");
-                        return;
-                    }
-
-                    await Userspace.SaveWorldAuto(world, SaveType.Overwrite, false);
-                    userMessages.SendTextMessage("Saved world " + world.Name);
-                    return;
-                }
                 string worldName = string.Join(" ", args);
                 worldName.Trim();
-                var worlds = Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld);
 
-                world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
-                if (world == null)
-                {
-                    if (int.TryParse(worldName, out var result))
-                    {
-                        var worldList = worlds.ToList();
-                        if (result < 0 || result >= worldList.Count)
-                        {
-                            userMessages.SendTextMessage("World index out of range");
-                            return;
-                        }
-                        world = worldList[result];
-                    }
-                    else
-                    {
-                        userMessages.SendTextMessage("No world found with the name " + worldName);
-                        return;
-                    }
-                }
+                // Get world by name or user world
+
+                world = GetWorldOrUserWorld(userMessages, worldName, obj.SenderId);
+                if (world == null) return;
+
                 await Userspace.SaveWorldAuto(world, SaveType.Overwrite, false);
 
                 userMessages.SendTextMessage("Saved world " + worldName);
             }
 
-            private static World GetWorld(UserMessages userMessages, string worldName)
-            {
-                var worlds = Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld);
-                var world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
-                if (world == null)
-                {
-                    if (int.TryParse(worldName, out var result))
-                    {
-                        var worldList = worlds.ToList();
-                        if (result < 0 || result >= worldList.Count)
-                        {
-                            userMessages.SendTextMessage("World index out of range");
-                            return null;
-                        }
-                        world = worldList[result];
-                    }
-                    else
-                    {
-                        userMessages.SendTextMessage("No world found with the name " + worldName);
-                        return null;
-                    }
-                }
-                return world;
-            }
-
-            // Get world or user's world
-            // helper function for /getWorld and /getUserWorld
-            private static World GetWorldOrUserWorld(UserMessages userMessages, string worldName, string userId)
-            {
-                World world = null;
-
-                if (worldName == null)
-                { // if no world name given, get the user's world
-                    var userWorlds = Engine.Current.WorldManager.Worlds.Where(w => w.GetUserByUserId(userId) != null);
-                    if (userWorlds.Count() == 0)
-                    {
-                        world = userWorlds.FirstOrDefault((w) => w.GetUserByUserId(userId).IsPresentInWorld);
-                    }
-                    if (world == null)
-                    {  // if no world found tell the user
-                        userMessages.SendTextMessage("User is not in a world");
-                        return null;
-                    }
-                    return world;
-                }
-                world = GetWorld(userMessages, worldName);
-                return world;
-            }
             // Start a new world from a template
             // Usage: /startWorldTemplate [template name]
 
@@ -425,6 +422,8 @@ namespace HeadlessTweaks
 
                 var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
                 await newWorld.Start();
+
+                newWorld.CurrentInstance.AllowUserToJoin(obj.SenderId);
                 userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
 
             }
@@ -437,7 +436,7 @@ namespace HeadlessTweaks
             public static async void worlds(UserMessages userMessages, Message obj, string[] args)
             {
                 int num = 0;
-                foreach (World world1 in Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld))
+                foreach (World world1 in Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld && canUserJoin(w, obj.SenderId)))
                 {
                     await userMessages.SendTextMessage(string.Format("[{0}] {1}\n Users: {2}\n Present: {3}\n\n ", 
                         num.ToString(), 
@@ -471,8 +470,59 @@ namespace HeadlessTweaks
             // Usage: /usersInWorld [world name]
             // If no world name is given, it will list the users in the world the user is in
 
-            [Command("usersInWorld", "List users in a world", PermissionLevel.Moderator)]
+            [Command("users", "List users in a world", PermissionLevel.Moderator)]
+            public static void users(UserMessages userMessages, Message obj, string[] args)
+            {
+                // Get world by name or user world
+                World world = GetWorldOrUserWorld(userMessages, string.Join(" ", args), obj.SenderId, true);
+                if (world == null) return;
 
+                // List users in world
+                var users = world.AllUsers.ToList();
+
+                userMessages.SendTextMessage(world.UserCount + " users in world " + world.Name + ((world.UserCount != 0)?":":""));
+                foreach (var user in users)
+                {
+                    // Return username
+                    // grey out if user is not present in the world 
+                    if (user.IsPresent)
+                    {
+                        userMessages.SendTextMessage(user.UserName);
+                    }
+                    else
+                    {
+                        userMessages.SendTextMessage("<i>"+user.UserName+"</i>", color.Gray.SetA(0.5f));
+                    }
+                }
+            }
+
+            // Get session orb
+            // Usage: /getSessionOrb [world name]
+            // If no world name is given, it will get the session orb of the user's world
+
+            [Command("getSessionOrb", "Get session orb")]
+            public static async void getsessionorb(UserMessages userMessages, Message obj, string[] args)
+            {
+                // Get world by name or user world
+                World world = GetWorldOrUserWorld(userMessages, string.Join(" ", args), obj.SenderId, true);
+                if (world == null) return;
+
+                // check if user can join world
+                if (!canUserJoin(world, obj.SenderId))
+                {
+                    userMessages.SendTextMessage("You can't join " + world.Name);
+                    return;
+                }
+                
+
+
+                world.RunSynchronously(async () =>
+                {
+                    var orb = world.GetOrb(true);
+                    var a = await userMessages.SendObjectMessage(orb);
+                    if(a) world.AllowUserToJoin(obj.SenderId);
+                });
+            }
 
 
             // Command Attributes
