@@ -14,7 +14,7 @@ namespace HeadlessTweaks
         //  Extend MessageManager.UserMessages with SendTextMessage(string, color)
         public static async void SendTextMessage(this MessageManager.UserMessages um, string text, color color)
         {
-            string message = "<color=#" + color.ToHexString(color.a != 1f) + ">" + text + "</color>";
+            string message = "<color=" + color.ToHexString(color.a != 1f) + ">" + text + "</color>";
             await um.SendTextMessage(message);
         }
 
