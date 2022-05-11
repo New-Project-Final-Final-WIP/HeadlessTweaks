@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using System;
 using NeosHeadless;
-
 namespace HeadlessTweaks
 {
     class NewHeadlessCommands
@@ -22,7 +21,7 @@ namespace HeadlessTweaks
             {
                 // Set user permission command
                 HeadlessTweaks.Msg("Setting up user permission command");
-                handler.RegisterCommand(new GenericCommand("setUserPermission", "Sets a user's permission level", "<user> <permission>", async (h, world, args) =>
+                handler.RegisterCommand(new GenericCommand("setUserPermission", "Sets a user's permission level", "<user> <permission>", (h, world, args) =>
                 {
                     if (args.Count != 2)
                     {
@@ -50,7 +49,7 @@ namespace HeadlessTweaks
                 
                 if (HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook))
                 {
-                    handler.RegisterCommand(new GenericCommand("sendToDiscord", "Sends a message to discord", "<message>", (async (h, world, args) =>
+                    handler.RegisterCommand(new GenericCommand("sendToDiscord", "Sends a message to discord", "<message>", (h, world, args) =>
                     {
                         if (args.Count == 0)
                         {
@@ -58,8 +57,8 @@ namespace HeadlessTweaks
                             return;
                         }
 
-                        DiscordIntegration.DiscordHelper.sendEmbed(String.Join(" ", args.ToArray()), new Discord.Color(0xbb5ec8));
-                    })));
+                        DiscordIntegration.DiscordHelper.sendEmbed(string.Join(" ", args.ToArray()), new Discord.Color(0xbb5ec8));
+                    }));
                 }
             }
         }

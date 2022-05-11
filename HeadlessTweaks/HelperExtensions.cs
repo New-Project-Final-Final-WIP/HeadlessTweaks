@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using FrooxEngine;
 using CloudX.Shared;
 using BaseX;
+using NeosModLoader;
 
 namespace HeadlessTweaks
 {
@@ -95,6 +94,20 @@ namespace HeadlessTweaks
             }
             HeadlessTweaks.Msg("Orb created");
             return root;
+        }
+
+        public static T GetValue<T>(this ModConfigurationKey<T> key)
+        {
+            return HeadlessTweaks.config.GetValue(key);
+        }
+        public static void SetValue<T>(this ModConfigurationKey<T> key, T value, string eventLabel = null)
+        {
+            HeadlessTweaks.config.Set(key, value, eventLabel);
+        }
+        public static void SetValueAndSave<T>(this ModConfigurationKey<T> key, T value, string eventLabel = null)
+        {
+            HeadlessTweaks.config.Set(key, value, eventLabel);
+            HeadlessTweaks.config.Save();
         }
     }
 }

@@ -109,6 +109,12 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MsgCommands\CommandAttribute.cs" />
+    <Compile Include="MsgCommands\CommonCommands.cs" />
+    <Compile Include="MsgCommands\FriendCommands.cs" />
+    <Compile Include="MsgCommands\ModerationCommands.cs" />
+    <Compile Include="MsgCommands\Utilities.cs" />
+    <Compile Include="MsgCommands\WorldCommands.cs" />
     <Compile Include="HelperExtensions.cs" />
     <Compile Include="LogOutputDisplay.cs" />
     <Compile Include="MessageCommands.cs" />
