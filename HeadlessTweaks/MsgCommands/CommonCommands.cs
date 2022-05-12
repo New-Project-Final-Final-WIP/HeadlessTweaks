@@ -15,7 +15,7 @@ namespace HeadlessTweaks
         partial class Commands
         {
             [Command("help", "Shows this help message")]
-            public static async void Help(UserMessages userMessages, Message msg, string[] args)
+            public static void Help(UserMessages userMessages, Message msg, string[] args)
             {
                 var messages = new BatchMessageHelper(userMessages);
                 foreach (var method in typeof(Commands).GetMethods())

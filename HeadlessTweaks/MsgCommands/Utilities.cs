@@ -6,6 +6,8 @@ using HarmonyLib;
 using BaseX;
 
 using static CloudX.Shared.MessageManager;
+using CloudX.Shared;
+using System;
 
 namespace HeadlessTweaks
 {
@@ -78,6 +80,42 @@ namespace HeadlessTweaks
             world = GetWorld(userMessages, worldName);
             return world;
         }
+
+
+        // Get world url from object uri
+
+        private static async Task<Uri> ExtractOrbUrl(UserMessages userMessages, string objectUri)
+        {
+            //var tcs = new TaskCompletionSource<Message>();
+
+            Uri url = null;
+            var w = Userspace.UserspaceWorld;
+            await w.Coroutines.StartTask(async () =>
+            {
+                Slot slot;
+                await new NextUpdate();
+                slot = w.RootSlot.AddSlot("SpawnedItem");
+                await slot.LoadObjectAsync(new Uri(objectUri));
+
+                var orb = slot.GetComponentInChildren<WorldOrb>();
+                if (orb == null)
+                {
+                    _ = userMessages.SendTextMessage("Not a world orb");
+                    return;
+                }
+                Uri worldUrl = orb.URL;
+                if (worldUrl == null)
+                {
+                    _ = userMessages.SendTextMessage("No world url");
+                    return;
+                }
+                url = worldUrl;
+                slot.Destroy();
+            });
+            return url;
+        }
+
+
 
         // A static getter for a HarmonyLib.Traverse instance that caches the Traverse instance on first use and returns the same instance on subsequent uses.  
         // This is useful for getting a Traverse instance that can be used on multiple threads.

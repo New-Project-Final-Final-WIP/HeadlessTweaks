@@ -148,5 +148,26 @@ namespace HeadlessTweaks
             var message = await tcs.Task;
             return message;
         }
+
+        // Request an object message from the user
+
+        public static async Task<FrooxEngine.Record> RequestObjectMessage(this UserMessages userMessages, string message, double timeLimit = 45)
+        {
+            _ = userMessages.SendTextMessage(message);
+
+            var response = await userMessages.WaitForResponse(timeLimit);
+
+            if (response == null)
+                return null;
+
+            // Check if response type is an item
+            if (response.MessageType != CloudX.Shared.MessageType.Object)
+            {
+                _ = userMessages.SendTextMessage("Invalid response");
+                return null;
+            }
+            // Extract the record from the message
+            return response.ExtractContent<FrooxEngine.Record>();
+        }
     }
 }

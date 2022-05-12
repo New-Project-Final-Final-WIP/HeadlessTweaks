@@ -20,7 +20,7 @@ namespace HeadlessTweaks
             public static void Postfix(CommandHandler handler)
             {
                 // Set user permission command
-                HeadlessTweaks.Msg("Setting up user permission command");
+                //HeadlessTweaks.Msg("Setting up user permission command");
                 handler.RegisterCommand(new GenericCommand("setUserPermission", "Sets a user's permission level", "<user> <permission>", (h, world, args) =>
                 {
                     if (args.Count != 2)

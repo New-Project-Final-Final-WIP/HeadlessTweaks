@@ -99,14 +99,87 @@ namespace HeadlessTweaks
                 var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
                 await newWorld.Start();
 
+                // Error starting world 
+                if (newWorld.CurrentInstance == null)
+                {
+                    _ = userMessages.SendTextMessage("Error starting world");
+                    return;
+                }
+
                 newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
                 _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
 
             }
 
+            // Start a world from the world roster
+            // Usage: /startWorld [world name]
+
+            [Command("startWorld", "Start a world", PermissionLevel.Moderator)]
+            public static async void StartWorld(UserMessages userMessages, Message msg, string[] args)
+            {
+                if (args.Length < 1)
+                {
+                    _ = userMessages.SendTextMessage("Usage: /startWorld [world name]");
+                    return;
+                }
+                string worldName = args[0];
+
+                
+                var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
+                // Get world from world roster
+                // Key is the world name, value is the world url
+                if (!WorldRoster.ContainsKey(worldName))
+                    return;
+
+                // Get world url
+                string worldUrl = WorldRoster[worldName];
+
+
+                WorldStartupParameters startInfo = new WorldStartupParameters
+                {
+                    LoadWorldURL = worldUrl
+                };
+                
+                // Get world handler
+                var handler = GetCommandHandler();
+
+                // Message user that the world is starting
+                _ = userMessages.SendTextMessage("Starting world " + worldName);
+
+                // Start world
+                var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
+                await newWorld.Start();
+
+                // Error starting world 
+                if (newWorld.CurrentInstance == null)
+                {
+                    _ = userMessages.SendTextMessage("Error starting world " + worldName);
+                    return;
+                }
+
+                newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
+                _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
+            }
+
+            // List world templates
+            // Usage: /worldTemplates
+
+            [Command("worldTemplates", "List world templates", PermissionLevel.Moderator)]
+            public static async void WorldTemplates(UserMessages userMessages, Message msg, string[] args)
+            {
+                var templates = await WorldPresets.GetPresets();
+
+                var messages = new BatchMessageHelper(userMessages);
+                messages.Add("World templates:");
+                foreach (var template in templates)
+                {
+                    messages.Add(template.Name);
+                }
+                messages.Send();
+            }
+
             // Start a world from a url
             // Usage: /startWorldUrl [record url]
-
             [Command("startWorldUrl", "Start a world from a url", PermissionLevel.Moderator)]
             public static async void StartWorldUrl(UserMessages userMessages, Message msg, string[] args)
             {
@@ -132,14 +205,19 @@ namespace HeadlessTweaks
                 var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
                 await newWorld.Start();
 
+                // Error starting world 
+                if (newWorld.CurrentInstance == null)
+                {
+                    _ = userMessages.SendTextMessage("Error starting world");
+                    return;
+                }
+
                 newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
                 _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
             }
 
-
             // Start a world from a world orb
             // Usage: /startWorldOrb [SessionAccessLevel]
-
             [Command("startWorldOrb", "Start a world from a world orb", PermissionLevel.Moderator)]
             public static async void StartWorldOrb(UserMessages userMessages, Message msg, string[] args)
             {
@@ -170,85 +248,53 @@ namespace HeadlessTweaks
                 }
 
                 // ask the user to send a world orb
-                _ = userMessages.SendTextMessage("Send a world orb");
 
-                var response = await userMessages.WaitForResponse(45);
+                var record = await userMessages.RequestObjectMessage("Send a world orb");
 
-                if (response == null)
-                    return;
-
-                // Check if response type is an item
-                if (response.MessageType != CloudX.Shared.MessageType.Object)
-                {
-                    _ = userMessages.SendTextMessage("Invalid response");
-                    return;
-                }
-                // Extract the record from the message
-                FrooxEngine.Record record = response.ExtractContent<FrooxEngine.Record>();
                 var itemUri = record.AssetURI;
 
-                Slot slot;
-                // Check if the record is a world orb
-                var w = Userspace.UserspaceWorld;
                 _ = userMessages.SendTextMessage("Checking if object is a world orb, Spawning orb...");
-                await w.Coroutines.StartTask(async () =>
-                { // RunSynchronously did not want to work
-                    await new NextUpdate();
-                    slot = w.RootSlot.AddSlot("SpawnedItem");
-                    await slot.LoadObjectAsync(new Uri(itemUri));
 
-                    var orb = slot.GetComponentInChildren<WorldOrb>();
-                    if (orb == null)
-                    {
-                        _ = userMessages.SendTextMessage("Not a world orb");
-                        return;
-                    }
-                    Uri worldUrl = orb.URL;
-                    if (worldUrl == null)
-                    {
-                        _ = userMessages.SendTextMessage("No world url");
-                        return;
-                    }
+                var worldUrl = await ExtractOrbUrl(userMessages, itemUri);
+                if (worldUrl == null)
+                    return;
 
-                    slot.Destroy();
-                    _ = userMessages.SendTextMessage("Found world orb, starting world...");
-                    // Create the world
-                    WorldStartupParameters startInfo = new WorldStartupParameters
-                    {
-                        LoadWorldURL = worldUrl.ToString(),
-                        AccessLevel = sessionAccessLevel.Value
-                    };
+                _ = userMessages.SendTextMessage("Found world orb, starting world...");
+                // Create the world
+                WorldStartupParameters startInfo = new WorldStartupParameters
+                {
+                    LoadWorldURL = worldUrl.ToString(),
+                    AccessLevel = sessionAccessLevel.Value
+                };
 
-                    var handler = GetCommandHandler();
-                    if (handler == null)
-                    {
-                        _ = userMessages.SendTextMessage("Error Handler Not Found :(");
-                        return;
-                    }
+                var handler = GetCommandHandler();
+                if (handler == null)
+                {
+                    _ = userMessages.SendTextMessage("Error Handler Not Found :(");
+                    return;
+                }
 
-                    _ = userMessages.SendTextMessage("Starting world...");
-                    var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
-                    await newWorld.Start();
+                _ = userMessages.SendTextMessage("Starting world...");
+                var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
+                await newWorld.Start();
 
-                    // Check if world is started
-                    if (newWorld.CurrentInstance == null)
-                    {
-                        _ = userMessages.SendTextMessage("Error starting world");
-                        return;
-                    }
+                // Check if world is started
+                if (newWorld.CurrentInstance == null)
+                {
+                    _ = userMessages.SendTextMessage("Error starting world");
+                    return;
+                }
 
 
-                    newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
-                    _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
-                });
+                newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
+                _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
             }
 
             // Set role for a user in a world
             // Target sender user's focused world if no world name is given
             // Usage: /role [user] [role name] [world name]
-
             [Command("role", "Set role for a user in a world", PermissionLevel.Administrator)]
-            public static async void Role(UserMessages userMessages, Message msg, string[] args)
+            public static void Role(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 2)
                 {
@@ -299,9 +345,8 @@ namespace HeadlessTweaks
 
             // Set own role
             // Usage: /roleSelf [role name] [world name]
-
             [Command("roleSelf", "Set own role", PermissionLevel.Administrator)]
-            public static async void RoleSelf(UserMessages userMessages, Message msg, string[] args)
+            public static void RoleSelf(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
                 {
@@ -312,10 +357,119 @@ namespace HeadlessTweaks
                 // Add user id at the beginning of the args
                 var newArgs = args.ToList();
                 newArgs.Insert(0, msg.SenderId);
-                
+
                 // Call the set role command
                 Role(userMessages, msg, newArgs.ToArray());
             }
+
+            // Add a world to the world roster list
+            // World Name can't have spaces and must be unique
+            // World url is optional
+            // If no world url is given, ask the user to send a world orb
+            // Usage: /addWorld [world name] [world url]
+            [Command("addWorld", "Add a world to the world roster list", PermissionLevel.Moderator)]
+            public static async void AddWorld(UserMessages userMessages, Message msg, string[] args)
+            {
+                if (args.Length < 1)
+                {
+                    _ = userMessages.SendTextMessage("Usage: /addWorld [world name] [world url]");
+                    return;
+                }
+
+                string worldName = args[0];
+                string worldUrl = "";
+                if (args.Length > 1)
+                {
+                    worldUrl = args[1];
+                }
+
+                var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
+                // Check if world name is unique
+                if (WorldRoster.ContainsKey(worldName))
+                {
+                    _ = userMessages.SendTextMessage($"{worldName} already exists");
+                    return;
+                }
+
+                if (worldUrl == "")
+                {
+                    // Ask the user to send a world orb
+                    var record = await userMessages.RequestObjectMessage("No uri provided, send a world orb");
+                    
+                    // Check if the object is a world orb
+                    var worldUrlResult = await ExtractOrbUrl(userMessages, record.AssetURI);
+                    if (worldUrlResult == null)
+                        return;
+                    worldUrl = worldUrlResult.ToString();
+                }
+
+                // check if the world url is valid
+                if (!Uri.IsWellFormedUriString(worldUrl, UriKind.Absolute))
+                {
+                    _ = userMessages.SendTextMessage("Invalid world url");
+                    return;
+                }
+
+                // Add the world to the world roster
+                WorldRoster.Add(worldName, worldUrl);
+
+                // Save the world roster
+                HeadlessTweaks.WorldRoster.SetValueAndSave(WorldRoster);
+
+                _ = userMessages.SendTextMessage($"Added {worldName} to the world roster");
+            }
+
+            // Remove a world from the world roster list
+            // Usage: /removeWorld [world name]
+            [Command("removeWorld", "Remove a world from the world roster list", PermissionLevel.Moderator)]
+            public static void RemoveWorld(UserMessages userMessages, Message msg, string[] args)
+            {
+                if (args.Length < 1)
+                {
+                    _ = userMessages.SendTextMessage("Usage: /removeWorld [world name]");
+                    return;
+                }
+
+                string worldName = args[0];
+
+                var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
+                // Check if world name is unique
+                if (!WorldRoster.ContainsKey(worldName))
+                {
+                    _ = userMessages.SendTextMessage($"{worldName} doesn't exist");
+                    return;
+                }
+
+                // Remove the world from the world roster
+                WorldRoster.Remove(worldName);
+
+                // Save the world roster
+                HeadlessTweaks.WorldRoster.SetValueAndSave(WorldRoster);
+
+                _ = userMessages.SendTextMessage($"Removed {worldName} from the world roster");
+
+            }
+
+            // List all worlds in the world roster list
+            // Usage: /listWorlds
+            [Command("listRosterWorlds", "List all worlds in the world roster list", PermissionLevel.Moderator)]
+            public static void ListWorlds(UserMessages userMessages, Message msg, string[] args)
+            {
+                var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
+
+                var worlds = WorldRoster.Keys.ToList();
+                worlds.Sort();
+
+                var messages = new BatchMessageHelper(userMessages);
+                messages.Add("World Roster:");
+                foreach (var world in worlds)
+                {
+                    messages.Add(world);
+                }
+                messages.Send();
+            }
+            
+            
         }
     }
 }

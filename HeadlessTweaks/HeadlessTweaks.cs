@@ -41,6 +41,14 @@ namespace HeadlessTweaks
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<Dictionary<string, PermissionLevel>> PermissionLevels = new ModConfigurationKey<Dictionary<string, PermissionLevel>>("PermissionLevels", "Permission Levels", () => new Dictionary<string, PermissionLevel>());
 
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<Dictionary<string, string>> WorldRoster = new ModConfigurationKey<Dictionary<string, string>>("WorldRoster", "World Roster", () => new Dictionary<string, string>());
+
+
+
+
+
+
         public override void OnEngineInit()
         {
             config = GetConfiguration();
