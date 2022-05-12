@@ -5,20 +5,22 @@ using FrooxEngine;
 using CloudX.Shared;
 using BaseX;
 using NeosModLoader;
+using System.Timers;
 
+using static CloudX.Shared.MessageManager;
 namespace HeadlessTweaks
 {
     public static class HelperExtensions
     {
         //  Extend MessageManager.UserMessages with SendTextMessage(string, color)
-        public static async void SendTextMessage(this MessageManager.UserMessages um, string text, color color)
+        public static async void SendTextMessage(this UserMessages um, string text, color color)
         {
             string message = "<color=" + color.ToHexString(color.a != 1f) + ">" + text + "</color>";
             await um.SendTextMessage(message);
         }
 
         //  Extend MessageManager.UserMessages with SendObjectMessage(slot)
-        public static async Task<bool> SendObjectMessage(this MessageManager.UserMessages um, Slot slot, Uri thumbnail = null, bool cleanUpSlot = true)
+        public static async Task<bool> SendObjectMessage(this UserMessages um, Slot slot, Uri thumbnail = null, bool cleanUpSlot = true)
         {
             if (thumbnail == null) thumbnail = new Uri("neosdb:///141d9d5bf3041474d7dab6f09a7cd8e0fb6b480a750d1e3fd03549e3ba685d11.png");
 
@@ -34,7 +36,7 @@ namespace HeadlessTweaks
                 slot.RunSynchronously(() =>
                 {
                     HeadlessTweaks.Msg("No thumbnail found in slot " + slot.Name);
-                    
+
                     asset = slot.World.AssetsSlot.AddSlot(slot.Name + "Thumbnail").AttachTexture(thumbnail);
                     var a = slot.AttachComponent<ItemTextureThumbnailSource>();
                     a.Texture.Target = asset;
@@ -108,6 +110,43 @@ namespace HeadlessTweaks
         {
             HeadlessTweaks.config.Set(key, value, eventLabel);
             HeadlessTweaks.config.Save();
+        }
+
+
+        // Wait for response using tastcompletionsoruce
+        // Add a task completion source to the dictionary MessageCommands.responseTasks
+
+        public static async Task<Message> WaitForResponse(this UserMessages userMessages, double timeLimit = 0)
+        {
+            var tcs = new TaskCompletionSource<Message>();
+            if (timeLimit > 0)
+            {
+                var timer = new Timer(timeLimit * 1000);
+                timer.Elapsed += (sender, e) =>
+                {
+                    // Check if the task is already completed 
+                    // If so clean up timer and return
+                    if (tcs.Task.IsCompleted)
+                    {
+                        timer.Dispose();
+                        return;
+                    }
+
+                    // Send the user a message to let them know the response has timed out
+                    userMessages.SendTextMessage("Response timed out", color.Red);
+
+                    // cancel the task
+                    tcs.TrySetResult(null);
+
+                    MessageCommands.responseTasks.Remove(userMessages);
+                    timer.Dispose();
+                };
+                timer.Start();
+            }
+            MessageCommands.responseTasks.Add(userMessages, tcs);
+
+            var message = await tcs.Task;
+            return message;
         }
     }
 }

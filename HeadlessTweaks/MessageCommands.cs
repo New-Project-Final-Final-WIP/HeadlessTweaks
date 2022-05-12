@@ -8,6 +8,7 @@ using HarmonyLib;
 using CloudX.Shared;
 using BaseX;
 
+using static CloudX.Shared.MessageManager;
 using static NeosModLoader.NeosMod;
 
 namespace HeadlessTweaks
@@ -16,6 +17,9 @@ namespace HeadlessTweaks
     {
         // Dictionary of command names and their methods
         private static readonly Dictionary<string, MethodInfo> commands = new Dictionary<string, MethodInfo>();
+
+        // Dictionary of UserMessages and TaskCompletionSource of Message
+        public static readonly Dictionary<UserMessages, TaskCompletionSource<Message>> responseTasks = new Dictionary<UserMessages, TaskCompletionSource<Message>>();
 
         internal static void Init(Harmony harmony)
         {
@@ -60,12 +64,22 @@ namespace HeadlessTweaks
                     ReadTime = time
                 }).ConfigureAwait(false);
             });
+
+            var userMessages = GetUserMessages(msg.SenderId);
+            // check if userMessages is in the response tasks dictionary
+            // if it is, set the message and remove it from the dictionary
+            // if it isn't, do nothing
+            if (responseTasks.ContainsKey(userMessages))
+            {
+                responseTasks[userMessages].TrySetResult(msg);
+                responseTasks.Remove(userMessages);
+                return;
+            }
             switch (msg.MessageType)
             {
                 case CloudX.Shared.MessageType.Text:
                     if (msg.Content.StartsWith("/"))
                     {
-                        var userMessages = GetUserMessages(msg.SenderId);
                         var args = msg.Content.Split(' ');
                         var cmd = args[0].Substring(1).ToLower();
                         var cmdArgs = args.Skip(1).ToArray();

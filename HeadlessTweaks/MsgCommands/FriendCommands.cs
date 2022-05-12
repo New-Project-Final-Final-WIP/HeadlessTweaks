@@ -12,7 +12,6 @@ namespace HeadlessTweaks
     {
         partial class Commands
         {
-
             // Message User
             // Usage: /message [user id] [message]
 
@@ -48,10 +47,14 @@ namespace HeadlessTweaks
                 var list = new List<Friend>();
                 Engine.Current.Cloud.Friends.GetFriends(list);
 
+                var messages = new BatchMessageHelper(userMessages);
                 foreach (var friend in list)
                 {
-                    userMessages.SendTextMessage($"[{friend.FriendUserId}] {friend.FriendUsername}", friend.FriendStatus == FriendStatus.Requested ? color.Cyan:color.Black);
+                    if (friend.FriendUserId == "U-Neos")
+                        continue;
+                    messages.Add($"[{friend.FriendUserId}] {friend.FriendUsername}", friend.FriendStatus == FriendStatus.Requested ? color.Cyan:color.Black);
                 }
+                messages.Send();
             }
 
             // Accept friend request

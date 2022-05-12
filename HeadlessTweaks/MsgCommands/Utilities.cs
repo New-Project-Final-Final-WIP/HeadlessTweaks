@@ -1,5 +1,9 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using FrooxEngine;
+using HarmonyLib;
+using BaseX;
 
 using static CloudX.Shared.MessageManager;
 
@@ -75,5 +79,67 @@ namespace HeadlessTweaks
             return world;
         }
 
+        // A static getter for a HarmonyLib.Traverse instance that caches the Traverse instance on first use and returns the same instance on subsequent uses.  
+        // This is useful for getting a Traverse instance that can be used on multiple threads.
+
+        private static NeosHeadless.CommandHandler GetCommandHandler()
+        {
+            if (_commandHandler == null)
+            {
+                _commandHandler = Traverse.CreateWithType("NeosHeadless.Program")?
+                    .Field<NeosHeadless.CommandHandler>("commandHandler")?
+                    .Value;
+            }
+            return _commandHandler;
+        }
+        private static NeosHeadless.CommandHandler _commandHandler = null;
+
+
+        class BatchMessageHelper
+        {
+            public UserMessages UserMessages { get; private set; }
+            // list of messages to send
+            public List<string> Messages { get; private set; }
+
+            public string Prefix { get; private set; }
+
+            // constructor
+            public BatchMessageHelper(UserMessages userMessages, string prefix = null)
+            {
+                UserMessages = userMessages;
+                Messages = new List<string>();
+                Prefix = prefix;
+            }
+
+            // add a message to the list
+            public void Add(string message)
+            {
+                if (Messages.Count != 0 && Messages.Last().Length + message.Length < 512)
+                {
+                    Messages[Messages.Count - 1] += "\n" + message;
+                }
+                else
+                {
+                    Messages.Add(Prefix + message);
+                }
+
+            }
+
+            // add message colr
+            public void Add(string message, color color)
+            {
+                var newMessage = "<color=" + color.ToHexString(color.a != 1f) + ">" + message + "</color>";
+                Add(newMessage);
+            }
+
+            // send the messages
+            public async void Send()
+            {
+                foreach (var message in Messages)
+                {
+                    await UserMessages.SendTextMessage(message);
+                }
+            }
+        }
     }
 }

@@ -83,7 +83,6 @@ namespace HeadlessTweaks
                 }
                 userMessages.SendTextMessage($"{userId} has a permission level of {GetUserPermissionLevel(userId)}");
             }
-
         }
     }
 }

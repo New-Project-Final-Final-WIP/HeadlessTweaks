@@ -4,6 +4,8 @@ using CloudX.Shared;
 using System.Reflection;
 
 using static CloudX.Shared.MessageManager;
+using System;
+using System.Collections.Generic;
 
 namespace HeadlessTweaks
 {
@@ -13,9 +15,9 @@ namespace HeadlessTweaks
         partial class Commands
         {
             [Command("help", "Shows this help message")]
-            public static void Help(UserMessages userMessages, Message msg, string[] args)
+            public static async void Help(UserMessages userMessages, Message msg, string[] args)
             {
-                string help = "";
+                var messages = new BatchMessageHelper(userMessages);
                 foreach (var method in typeof(Commands).GetMethods())
                 {
                     var attr = method.GetCustomAttribute<CommandAttribute>();
@@ -23,10 +25,12 @@ namespace HeadlessTweaks
                     {
                         // skip if permission level is higher than the user
                         if (GetUserPermissionLevel(msg.SenderId) < attr.PermissionLevel) continue;
-                        help += attr.Name + " - " + attr.Description + "\n";
+                        
+                        var message = $"{attr.Name} - {attr.Description}";
+                        messages.Add(message);
                     }
                 }
-                _ = userMessages.SendTextMessage(help);
+                messages.Send();
             }
 
             // Toggle Opt out of auto-invites
@@ -139,18 +143,23 @@ namespace HeadlessTweaks
             // Usage: /worlds
 
             [Command("worlds", "List all worlds")]
-            public static async void Worlds(UserMessages userMessages, Message msg, string[] args)
+            public static void Worlds(UserMessages userMessages, Message msg, string[] args)
             {
+                var messages = new BatchMessageHelper(userMessages);
                 int num = 0;
                 foreach (World world1 in Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld && CanUserJoin(w, msg.SenderId)))
                 {
+                    messages.Add($"[{num}] {world1.Name} | {world1.ActiveUserCount} ({world1.UserCount}) | {world1.AccessLevel}");
+/*
+
                     await userMessages.SendTextMessage(string.Format("[{0}] {1}\n Users: {2}\n Present: {3}\n\n ",
                         num.ToString(),
                         world1.RawName,
                         world1.UserCount,
-                        world1.ActiveUserCount) + string.Format("AccessLevel: {0}\n MaxUsers: {1}", world1.AccessLevel, world1.MaxUsers));
+                        world1.ActiveUserCount) + string.Format("AccessLevel: {0}\n MaxUsers: {1}", world1.AccessLevel, world1.MaxUsers));*/
                     ++num;
                 }
+                messages.Send();
             }
         }
     }
