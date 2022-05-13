@@ -494,6 +494,55 @@ namespace HeadlessTweaks
                 }
                 messages.Send();
             }
+
+            // Close world command
+            // Usage: /closeWorld [world name]
+
+            [Command("closeWorld", "Close a world", PermissionLevel.Moderator)]
+            public static async void CloseWorld(UserMessages userMessages, Message msg, string[] args)
+            {
+                if (args.Length < 1)
+                {
+                    _ = userMessages.SendTextMessage("Usage: /closeWorld [world name]");
+                    return;
+                }
+                // Get the world name from joining the args
+
+                var worldName = string.Join(" ", args);
+
+                // Get the users world or focused world
+                var world = GetWorldOrUserWorld(userMessages, worldName, msg.SenderId, true);
+                if (world == null)
+                    return;
+
+                // Wait for response from the user to confirm they want to close the world
+                await userMessages.SendTextMessage("Are you sure you want to close this world? (y/n)");
+                var confirmMsg = await userMessages.WaitForResponse(32);
+                if (confirmMsg == null)
+                {
+                    return;
+                }
+
+                // Make sure its a text message
+                if (confirmMsg.MessageType != CloudX.Shared.MessageType.Text)
+                {
+                    _ = userMessages.SendTextMessage("Invalid response");
+                    return;
+                }
+
+                var confirmText = confirmMsg.Content.ToLower();
+
+                if (confirmText == "y" || confirmText == "yes")
+                {
+                    // Close the world
+                    world.Destroy();
+                    _ = userMessages.SendTextMessage("World closed");
+                }
+                else
+                {
+                    _ = userMessages.SendTextMessage("World not closed");
+                }
+            }
         }
     }
 }
