@@ -1,13 +1,13 @@
 ﻿using HarmonyLib;
 using System;
 using NeosHeadless;
+
 namespace HeadlessTweaks
 {
     class NewHeadlessCommands
     {
         internal static void Init(Harmony harmony)
         {
-            HeadlessTweaks.Msg("NewHeadlessCommands.Init");
             var yeah = typeof(NeosCommands).GetMethod("SetupCommonCommands");
             var what = typeof(NewCommands).GetMethod("Postfix");
 
@@ -19,8 +19,6 @@ namespace HeadlessTweaks
         {
             public static void Postfix(CommandHandler handler)
             {
-                // Set user permission command
-                //HeadlessTweaks.Msg("Setting up user permission command");
                 handler.RegisterCommand(new GenericCommand("setUserPermission", "Sets a user's permission level", "<user> <permission>", (h, world, args) =>
                 {
                     if (args.Count != 2)
@@ -57,7 +55,7 @@ namespace HeadlessTweaks
                             return;
                         }
 
-                        DiscordIntegration.DiscordHelper.sendEmbed(string.Join(" ", args.ToArray()), new Discord.Color(0xbb5ec8));
+                        DiscordIntegration.DiscordHelper.SendEmbed(string.Join(" ", args.ToArray()), new Discord.Color(0xbb5ec8));
                     }));
                 }
             }

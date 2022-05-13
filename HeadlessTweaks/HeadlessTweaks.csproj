@@ -116,11 +116,8 @@
     <Compile Include="MsgCommands\Utilities.cs" />
     <Compile Include="MsgCommands\WorldCommands.cs" />
     <Compile Include="HelperExtensions.cs" />
-    <Compile Include="LogOutputDisplay.cs" />
     <Compile Include="MessageCommands.cs" />
     <Compile Include="NewHeadlessCommands.cs" />
-    <Compile Include="ImpulsePassMethods.cs" />
-    <Compile Include="ImpulsePass.cs" />
     <Compile Include="DiscordIntegration.cs" />
     <Compile Include="HeadlessTweaks.cs" />
     <Compile Include="PermissionLevel.cs" />
