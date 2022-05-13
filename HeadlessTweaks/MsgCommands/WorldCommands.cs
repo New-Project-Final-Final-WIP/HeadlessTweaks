@@ -453,7 +453,7 @@ namespace HeadlessTweaks
             // List all worlds in the world roster list
             // Usage: /listWorlds
             [Command("listRosterWorlds", "List all worlds in the world roster list", PermissionLevel.Moderator)]
-            public static void ListWorlds(UserMessages userMessages, Message msg, string[] args)
+            public static void ListRosterWorlds(UserMessages userMessages, Message msg, string[] args)
             {
                 var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
 
@@ -468,8 +468,32 @@ namespace HeadlessTweaks
                 }
                 messages.Send();
             }
-            
-            
+
+            // List all worlds both in the world roster list and in the template list
+            // Usage: /listWorlds
+            [Command("listWorlds", "List all worlds in the world roster and in the world presets", PermissionLevel.Moderator)]
+            public static async void ListWorlds(UserMessages userMessages, Message msg, string[] args)
+            {
+                var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
+                var WorldTemplates = await WorldPresets.GetPresets();
+
+                var worlds = WorldRoster.Keys.ToList();
+                worlds.Sort();
+
+                var messages = new BatchMessageHelper(userMessages);
+                messages.Add("<b>World Roster:</b>");
+                foreach (var world in worlds)
+                {
+                    messages.Add(world);
+                }
+
+                messages.Add("<b>World Templates:</b>");
+                foreach (var world in WorldTemplates)
+                {
+                    messages.Add(world.Name);
+                }
+                messages.Send();
+            }
         }
     }
 }

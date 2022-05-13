@@ -118,7 +118,7 @@ namespace HeadlessTweaks
             }
             public static void SendWorldEmbed(World world, string action, Color color)
             {
-                string SessionName = world.Name;
+                string SessionName = world.RawName;
                 // TODO: Make this configurable 
                 var mappings = HeadlessTweaks.SessionIdToName.GetValue();
                 if (mappings.ContainsKey(world.SessionId))
@@ -132,7 +132,7 @@ namespace HeadlessTweaks
                 string userName = userNameOverride ?? user.UserName;
                 string userId = userIdOverride ?? user.UserID;
 
-                string SessionName = user.World.Name;
+                string SessionName = user.World.RawName;
 
                 var mappings = HeadlessTweaks.SessionIdToName.GetValue();
                 if (mappings.ContainsKey(user.World.SessionId))
