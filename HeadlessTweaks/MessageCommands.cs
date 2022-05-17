@@ -13,7 +13,7 @@ using static NeosModLoader.NeosMod;
 
 namespace HeadlessTweaks
 {
-    internal partial class MessageCommands
+    public partial class MessageCommands
     {
         // Dictionary of command names and their methods
         private static readonly Dictionary<string, MethodInfo> commands = new Dictionary<string, MethodInfo>();
@@ -33,6 +33,7 @@ namespace HeadlessTweaks
             foreach (var method in cmdMethods)
             {
                 var cmdName = method.GetCustomAttribute<CommandAttribute>().Name.ToLower();
+                
                 commands.Add(cmdName, method);
             }
 
@@ -65,6 +66,8 @@ namespace HeadlessTweaks
                 }).ConfigureAwait(false);
             });
 
+            if (Engine.Current.Cloud.HubClient == null) return;
+            
             var userMessages = GetUserMessages(msg.SenderId);
             // check if userMessages is in the response tasks dictionary
             // if it is, set the message and remove it from the dictionary
@@ -108,7 +111,11 @@ namespace HeadlessTweaks
                         // Try to execute command and send error message if it fails
                         try
                         {
-                            cmdMethod.Invoke(null, new object[] { userMessages, msg, cmdArgs });
+
+                            var cmdDelegate = (CommandDelegate)Delegate.CreateDelegate(typeof(CommandDelegate), cmdMethod);
+                            //cmdMethod.Invoke(null, new object[] { userMessages, msg, cmdArgs });
+
+                            cmdDelegate(userMessages, msg, cmdArgs);
                         }
                         catch (Exception e)
                         {

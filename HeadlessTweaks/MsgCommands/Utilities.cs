@@ -132,7 +132,10 @@ namespace HeadlessTweaks
         }
         private static NeosHeadless.CommandHandler _commandHandler = null;
 
-
+        // Command delegate type for the command handler
+        //(UserMessages userMessages, Message msg, string[] args)
+        public delegate void CommandDelegate(UserMessages userMessages, Message msg, string[] args);
+        
         class BatchMessageHelper
         {
             public UserMessages UserMessages { get; private set; }
@@ -173,6 +176,7 @@ namespace HeadlessTweaks
             // send the messages
             public async void Send()
             {
+                
                 foreach (var message in Messages)
                 {
                     await UserMessages.SendTextMessage(message);

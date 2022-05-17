@@ -4,8 +4,6 @@ using CloudX.Shared;
 using System.Reflection;
 
 using static CloudX.Shared.MessageManager;
-using System;
-using System.Collections.Generic;
 
 namespace HeadlessTweaks
 {
@@ -160,6 +158,16 @@ namespace HeadlessTweaks
                     ++num;
                 }
                 messages.Send();
+            }
+
+
+            // Throw an error
+            // Usage: /throwErr
+
+            [Command("throwErr", "Throw Error", PermissionLevel.Owner)]
+            public static void ThrowError(UserMessages userMessages, Message msg, string[] args)
+            {
+                throw new System.Exception("Error Thrown");
             }
         }
     }

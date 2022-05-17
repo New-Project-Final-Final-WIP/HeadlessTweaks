@@ -250,7 +250,11 @@ namespace HeadlessTweaks
                 // ask the user to send a world orb
 
                 var record = await userMessages.RequestObjectMessage("Send a world orb");
-
+                if (record == null)
+                {
+                    _ = userMessages.SendTextMessage("No world orb sent");
+                    return;
+                }
                 var itemUri = record.AssetURI;
 
                 _ = userMessages.SendTextMessage("Checking if object is a world orb, Spawning orb...");
