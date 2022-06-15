@@ -52,7 +52,7 @@ namespace HeadlessTweaks
                 {
                     if (friend.FriendUserId == "U-Neos")
                         continue;
-                    messages.Add($"[{friend.FriendUserId}] {friend.FriendUsername}", friend.FriendStatus == FriendStatus.Requested ? color.Cyan:color.Black);
+                    messages.Add($"[{friend.FriendUserId}] {friend.FriendUsername}", friend.FriendStatus == FriendStatus.Requested ? color.Cyan:color.Black, true);
                 }
                 messages.Send();
             }

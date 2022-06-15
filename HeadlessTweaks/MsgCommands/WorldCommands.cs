@@ -466,10 +466,13 @@ namespace HeadlessTweaks
 
                 var messages = new BatchMessageHelper(userMessages);
                 messages.Add("World Roster:");
+
+                // iterate over all worlds and modulate the alpha channel of the color to make them more visible
                 foreach (var world in worlds)
                 {
-                    messages.Add(world);
+                    messages.Add(world, true);
                 }
+                
                 messages.Send();
             }
 
@@ -488,13 +491,13 @@ namespace HeadlessTweaks
                 messages.Add("<b>World Roster:</b>");
                 foreach (var world in worlds)
                 {
-                    messages.Add(world);
+                    messages.Add(world, true);
                 }
 
                 messages.Add("<b>World Templates:</b>");
                 foreach (var world in WorldTemplates)
                 {
-                    messages.Add(world.Name);
+                    messages.Add(world.Name, true);
                 }
                 messages.Send();
             }

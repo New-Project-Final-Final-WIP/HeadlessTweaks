@@ -35,6 +35,12 @@ namespace HeadlessTweaks
                 var cmdName = method.GetCustomAttribute<CommandAttribute>().Name.ToLower();
                 
                 commands.Add(cmdName, method);
+
+                // Add all the aliases to the dictionary
+                foreach (var alias in method.GetCustomAttribute<CommandAttribute>().Aliases)
+                {
+                    commands.Add(alias.ToLower(), method);
+                }
             }
 
             var target = typeof(WorldStartSettingsExtensions).GetMethod("SetWorldParameters");

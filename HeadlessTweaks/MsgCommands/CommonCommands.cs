@@ -16,18 +16,35 @@ namespace HeadlessTweaks
             public static void Help(UserMessages userMessages, Message msg, string[] args)
             {
                 var messages = new BatchMessageHelper(userMessages);
-                foreach (var method in typeof(Commands).GetMethods())
+
+                // Iterate over all commands and print them
+                var commandList = commands.ToList();
+
+                // Ignore aliases defined in the CommandAttribute
+                commandList.RemoveAll(x => x.Value.GetCustomAttribute<CommandAttribute>()?.Name.ToLower() != x.Key.ToLower());
+
+
+                foreach (var command in commandList)
                 {
+                    var method = command.Value;
                     var attr = method.GetCustomAttribute<CommandAttribute>();
                     if (attr != null)
                     {
                         // skip if permission level is higher than the user
                         if (GetUserPermissionLevel(msg.SenderId) < attr.PermissionLevel) continue;
-                        
+
                         var message = $"{attr.Name} - {attr.Description}";
-                        messages.Add(message);
+
+                        // if there are aliases, print them too
+                        if (attr.Aliases.Length > 0)
+                        {
+                            message += $"\nAliases: {string.Join(", ", attr.Aliases)}";
+                        }
+
+                        messages.Add(message, true);
                     }
                 }
+                
                 messages.Send();
             }
 
@@ -64,7 +81,7 @@ namespace HeadlessTweaks
             // Invite me to a specific world by name or to the current world if no name is given
             // Usage: /reqInvite [world name]
 
-            [Command("reqInvite", "Requests an invite to a world")]
+            [Command("reqInvite", "Requests an invite to a world", PermissionLevel.None, "requestInvite")]
             public static void ReqInvite(UserMessages userMessages, Message msg, string[] args)
             {
                 World world = null;
@@ -147,14 +164,7 @@ namespace HeadlessTweaks
                 int num = 0;
                 foreach (World world1 in Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld && CanUserJoin(w, msg.SenderId)))
                 {
-                    messages.Add($"[{num}] {world1.Name} | {world1.ActiveUserCount} ({world1.UserCount}) | {world1.AccessLevel}");
-/*
-
-                    await userMessages.SendTextMessage(string.Format("[{0}] {1}\n Users: {2}\n Present: {3}\n\n ",
-                        num.ToString(),
-                        world1.RawName,
-                        world1.UserCount,
-                        world1.ActiveUserCount) + string.Format("AccessLevel: {0}\n MaxUsers: {1}", world1.AccessLevel, world1.MaxUsers));*/
+                    messages.Add($"[{num}] {world1.Name} | {world1.ActiveUserCount} ({world1.UserCount}) | {world1.AccessLevel}", true);
                     ++num;
                 }
                 messages.Send();

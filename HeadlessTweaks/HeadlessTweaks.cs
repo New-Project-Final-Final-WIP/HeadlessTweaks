@@ -77,7 +77,8 @@ namespace HeadlessTweaks
             Msg(discordExists ? "Discord.NET library found" : "Discord.NET library not found");
             
             if (config.GetValue(UseDiscordWebhook) && discordExists) DiscordIntegration.Init(harmony);
-            if (config.GetValue(UseDiscordWebhook) && !discordExists) Warn("Discord.NET library not found, but the UseDiscordWebhook option is enabled. Please install the Discord.NET library to use this feature.");
+            if (config.GetValue(UseDiscordWebhook) && !discordExists) 
+                Warn("Discord.NET library not found, but the UseDiscordWebhook option is enabled. Please put the Discord.NET library dlls in nml_libs to use this feature.");
             
             // If we are not loaded by a headless client skip the rest
             if (!isHeadless)

@@ -144,6 +144,8 @@ namespace HeadlessTweaks
 
             public string Prefix { get; private set; }
 
+            bool _alphaMod = false;
+
             // constructor
             public BatchMessageHelper(UserMessages userMessages, string prefix = null)
             {
@@ -151,10 +153,19 @@ namespace HeadlessTweaks
                 Messages = new List<string>();
                 Prefix = prefix;
             }
-
             // add a message to the list
-            public void Add(string message)
+            public void Add(string message, bool modulateAlpha = false)
             {
+                if (modulateAlpha)
+                {
+                    if(_alphaMod)
+                    {
+                        message = AlphaMessage(message, 0.7f);
+                    }
+                    _alphaMod = !_alphaMod;
+                } else {
+                    _alphaMod = true; // reset alpha mod to true so if modulation continues it will start with alpha
+                }
                 if (Messages.Count != 0 && Messages.Last().Length + message.Length < 512)
                 {
                     Messages[Messages.Count - 1] += "\n" + message;
@@ -163,16 +174,27 @@ namespace HeadlessTweaks
                 {
                     Messages.Add(Prefix + message);
                 }
-
             }
 
             // add message colr
-            public void Add(string message, color color)
+            public void Add(string message, color color, bool modulateAlpha = false)
             {
-                var newMessage = "<color=" + color.ToHexString(color.a != 1f) + ">" + message + "</color>";
-                Add(newMessage);
+                var newMessage = string.Format("<color={0}>{1}</color>", color.ToHexString(color.a != 1f), message);  // "<color=" + color.ToHexString(color.a != 1f) + ">" + message + "</color>";
+                Add(newMessage, modulateAlpha);
+            }
+            
+            // add message alpha
+            public void Add(string message, float alpha)
+            {
+                Add(AlphaMessage(message, alpha));
             }
 
+            public string AlphaMessage(string message, float alpha)
+            {
+                byte a = (byte)MathX.Clamp((int)(alpha * 255f), 0, 256);
+
+                return string.Format("<alpha=#{0}>{1}</alpha>", a.ToString("X2"), message);
+            }
             // send the messages
             public async void Send()
             {
