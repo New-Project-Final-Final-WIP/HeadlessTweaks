@@ -73,7 +73,7 @@ namespace HeadlessTweaks
 
                 var friend = Engine.Current.Cloud.Friends.GetFriend(userId);
 
-                if (friend == null || friend.FriendStatus == FriendStatus.Requested)
+                if (friend == null || friend.FriendStatus != FriendStatus.Requested)
                 {
                     userMessages.SendTextMessage("There's no friend request from that user");
                     return;

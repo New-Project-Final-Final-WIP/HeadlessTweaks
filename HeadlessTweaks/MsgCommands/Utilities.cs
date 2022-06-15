@@ -62,7 +62,7 @@ namespace HeadlessTweaks
             if (string.IsNullOrWhiteSpace(worldName))
             { // if no world name given, get the user's world
                 var userWorlds = Engine.Current.WorldManager.Worlds.Where(w => w.GetUserByUserId(userId) != null);
-                if (userWorlds.Count() == 0)
+                if (userWorlds.Count() != 0)
                 {
                     world = userWorlds.FirstOrDefault((w) => w.GetUserByUserId(userId).IsPresentInWorld);
                 }
