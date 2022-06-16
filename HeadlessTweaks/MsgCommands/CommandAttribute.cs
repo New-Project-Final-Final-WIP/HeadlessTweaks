@@ -9,6 +9,7 @@ namespace HeadlessTweaks
         // Description: The description of the command
         // PermissionLevel: The permission level required to use the command
         // Alliases: The aliases of the command
+        // Usage: The arguments of the command
 
         internal class CommandAttribute : Attribute
         {
@@ -16,13 +17,16 @@ namespace HeadlessTweaks
             public string Description { get; set; }
             public PermissionLevel PermissionLevel { get; set; }
             public string[] Aliases { get; set; }
+            public string Usage { get; set; }
 
-            public CommandAttribute(string name, string description, PermissionLevel permissionLevel = PermissionLevel.None, params string[] aliases)
+
+            public CommandAttribute(string name, string description, PermissionLevel permissionLevel = PermissionLevel.None, string usage = null, params string[] aliases)
             {
                 Name = name;
                 Description = description;
                 PermissionLevel = permissionLevel;
                 Aliases = aliases;
+                Usage = usage;
             }
         }
     }

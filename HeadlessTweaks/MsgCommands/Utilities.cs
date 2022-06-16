@@ -23,6 +23,23 @@ namespace HeadlessTweaks
             return HeadlessTweaks.PermissionLevels.GetValue().FirstOrDefault(x => x.Key == userId).Value;
         }
 
+
+        public static bool TryParseAccessLevel(string value, out SessionAccessLevel parsedLevel)
+        {
+            value.Trim();
+            // Contacts to friends
+            if (value.ToLower() == "contacts")
+            {
+                value = "Friends";
+            }
+            if (value.ToLower() == "contacts+")
+            {
+                value = "FriendsOfFriends";
+            }
+            return Enum.TryParse(value, true, out parsedLevel);
+        }
+        
+
         private static bool CanUserJoin(World world, string userId)
         {
             return GetUserPermissionLevel(userId) > PermissionLevel.None || world.IsUserAllowed(userId);
@@ -135,7 +152,7 @@ namespace HeadlessTweaks
         // Command delegate type for the command handler
         //(UserMessages userMessages, Message msg, string[] args)
         public delegate void CommandDelegate(UserMessages userMessages, Message msg, string[] args);
-        
+
         class BatchMessageHelper
         {
             public UserMessages UserMessages { get; private set; }
@@ -196,9 +213,8 @@ namespace HeadlessTweaks
                 return string.Format("<alpha=#{0}>{1}</alpha>", a.ToString("X2"), message);
             }
             // send the messages
-            public async void Send()
+            public async Task Send()
             {
-                
                 foreach (var message in Messages)
                 {
                     await UserMessages.SendTextMessage(message);

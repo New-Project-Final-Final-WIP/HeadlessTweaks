@@ -13,7 +13,7 @@ namespace HeadlessTweaks
     public static class HelperExtensions
     {
         //  Extend MessageManager.UserMessages with SendTextMessage(string, color)
-        public static async void SendTextMessage(this UserMessages um, string text, color color)
+        public static async Task SendTextMessage(this UserMessages um, string text, color color)
         {
             string message = "<color=" + color.ToHexString(color.a != 1f) + ">" + text + "</color>";
             await um.SendTextMessage(message);
@@ -133,7 +133,7 @@ namespace HeadlessTweaks
                     }
 
                     // Send the user a message to let them know the response has timed out
-                    userMessages.SendTextMessage("Response timed out", color.Red);
+                    _ = userMessages.SendTextMessage("Response timed out", color.Red);
 
                     // cancel the task
                     tcs.TrySetResult(null);

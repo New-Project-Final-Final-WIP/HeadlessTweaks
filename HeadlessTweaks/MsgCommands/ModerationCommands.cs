@@ -16,7 +16,7 @@ namespace HeadlessTweaks
             // User can not set their own permission level
             // Target permission must be lower than or equal to your own
 
-            [Command("setPerm", "Sets a user's permission level", PermissionLevel.Moderator)]
+            [Command("setPerm", "Sets a user's permission level", PermissionLevel.Moderator, usage: "[user id] [level]")]
             public static void SetPerm(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 2)
@@ -66,9 +66,9 @@ namespace HeadlessTweaks
             }
 
             // Get user permission level
-            // Usage: /getPerm [User ID]
+            // Usage: /getPerm [?user id]
 
-            [Command("getPerm", "Get user permission level", PermissionLevel.Moderator)]
+            [Command("getPerm", "Get user permission level", PermissionLevel.Moderator, usage: "[?user id]")]
             public static void GetPerm(UserMessages userMessages, Message msg, string[] args)
             {
                 var userId = msg.SenderId;

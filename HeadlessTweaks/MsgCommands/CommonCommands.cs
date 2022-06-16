@@ -12,10 +12,62 @@ namespace HeadlessTweaks
     {
         partial class Commands
         {
-            [Command("help", "Shows this help message")]
+            // Show help
+            // Usage: /help [?command]
+            // If no command is given show all commands
+
+            [Command("help", "Shows this help message", usage: "[?command]")]
             public static void Help(UserMessages userMessages, Message msg, string[] args)
             {
                 var messages = new BatchMessageHelper(userMessages);
+                // Check if command arg is given
+                if (args.Length > 0)
+                {
+                    var commandStr = args[0];
+                    // Check if command exists
+                    if (!commands.ContainsKey(commandStr.ToLower()))
+                    {
+                        userMessages.SendTextMessage($"Command '{commandStr}' not found");
+                        return;
+                    }
+                    var method = commands[commandStr.ToLower()];
+
+                    var attr = method.GetCustomAttribute<CommandAttribute>();
+
+                    if (GetUserPermissionLevel(msg.SenderId) < attr.PermissionLevel)
+                    {
+                        userMessages.SendTextMessage($"Command '{commandStr}' not found");
+                        return;
+                    };
+                    
+                    /* Message to return:
+                     * 
+                     * /name usage
+                     * description
+                     * aliases
+                     */
+
+                    // Command 
+                    messages.Add($"/{attr.Name} {attr.Usage}");
+                    messages.Add(attr.Description);
+
+                    if (attr.Aliases.Length > 0)
+                    {
+                        messages.Add("Aliases:");
+                        foreach (var alias in attr.Aliases)
+                        {
+                            messages.Add($"/{alias}", true);
+                        }
+                    }
+                    messages.Send();
+                    return;
+                }
+
+
+
+
+
+                //var messages = new BatchMessageHelper(userMessages);
 
                 // Iterate over all commands and print them
                 var commandList = commands.ToList();
@@ -79,9 +131,9 @@ namespace HeadlessTweaks
             }
 
             // Invite me to a specific world by name or to the current world if no name is given
-            // Usage: /reqInvite [world name]
+            // Usage: /reqInvite [?world name...]
 
-            [Command("reqInvite", "Requests an invite to a world", PermissionLevel.None, "requestInvite")]
+            [Command("reqInvite", "Requests an invite to a world", PermissionLevel.None, usage: "[?world name...]", "requestInvite")]
             public static void ReqInvite(UserMessages userMessages, Message msg, string[] args)
             {
                 World world = null;
@@ -127,10 +179,10 @@ namespace HeadlessTweaks
             }
 
             // Get session orb
-            // Usage: /getSessionOrb [world name]
+            // Usage: /getSessionOrb [?world name...]
             // If no world name is given, it will get the session orb of the user's world
 
-            [Command("getSessionOrb", "Get session orb")]
+            [Command("getSessionOrb", "Get session orb", usage: "[?world name...]")]
             public static void GetSessionOrb(UserMessages userMessages, Message msg, string[] args)
             {
                 // Get world by name or user world
@@ -178,6 +230,16 @@ namespace HeadlessTweaks
             public static void ThrowError(UserMessages userMessages, Message msg, string[] args)
             {
                 throw new System.Exception("Error Thrown");
+            }
+
+            
+            // Throw an error asynchronously
+            // Usage: /throwErrAsync
+
+            [Command("throwErrAsync", "Throw Error Asynchronously", PermissionLevel.Owner)]
+            public static async System.Threading.Tasks.Task ThrowErrorAsync(UserMessages userMessages, Message msg, string[] args)
+            {
+                throw new System.Exception("Async Error Thrown");
             }
         }
     }

@@ -57,23 +57,19 @@ namespace HeadlessTweaks
             Engine.Current.Cloud.Messages.OnMessageReceived += OnMessageReceived;
         }
 
-        private static void OnMessageReceived(Message msg)
+        private static async void OnMessageReceived(Message msg)
         {
-            Task.Run(async () =>
+            if (Engine.Current.Cloud.HubClient == null) return;
+ 
+            // Mark message as read
+            await Engine.Current.Cloud.HubClient.MarkMessagesRead(new MarkReadBatch()
             {
-                DateTime time = DateTime.UtcNow;
-                var ids = new List<string> { msg.Id };
-
-                await Engine.Current.Cloud.HubClient.MarkMessagesRead(new MarkReadBatch()
-                {
-                    SenderId = Engine.Current.Cloud.Messages.SendReadNotification ? msg.SenderId : null,
-                    Ids = ids,
-                    ReadTime = time
-                }).ConfigureAwait(false);
+                SenderId = Engine.Current.Cloud.Messages.SendReadNotification ? msg.SenderId : null,
+                Ids = new List<string> { msg.Id },
+                ReadTime = DateTime.UtcNow
             });
 
-            if (Engine.Current.Cloud.HubClient == null) return;
-            
+
             var userMessages = GetUserMessages(msg.SenderId);
             // check if userMessages is in the response tasks dictionary
             // if it is, set the message and remove it from the dictionary
@@ -104,30 +100,41 @@ namespace HeadlessTweaks
 
                         if (cmdAttr.PermissionLevel > GetUserPermissionLevel(msg.SenderId))
                         {
-                            userMessages.SendTextMessage("You do not have permission to use that command.");
+                            _ = userMessages.SendTextMessage("You do not have permission to use that command.");
                             return;
                         }
 
                         if (cmdMethod == null)
                         {
-                            userMessages.SendTextMessage("Unknown command");
+                            _ = userMessages.SendTextMessage("Unknown command");
                             return;
                         }
                         Msg("Executing command: " + cmd);
                         // Try to execute command and send error message if it fails
+                        
                         try
                         {
-
-                            var cmdDelegate = (CommandDelegate)Delegate.CreateDelegate(typeof(CommandDelegate), cmdMethod);
                             //cmdMethod.Invoke(null, new object[] { userMessages, msg, cmdArgs });
+                            // check if the command is async
+                            if (cmdMethod.ReturnType == typeof(Task))
+                            { // if it is, execute it asynchronously so that we can catch any exceptions
+                              // Also good thing to note, apparently you can't catch exceptions from async void methods, so we have to define these as async Task
+                              // https://docs.microsoft.com/en-us/archive/msdn-magazine/2013/march/async-await-best-practices-in-asynchronous-programming#avoid-async-void
 
-                            cmdDelegate(userMessages, msg, cmdArgs);
+                                await (Task)cmdMethod.Invoke(null, new object[] { userMessages, msg, cmdArgs });
+                            }
+                            else
+                            {
+                                var cmdDelegate = (CommandDelegate)Delegate.CreateDelegate(typeof(CommandDelegate), cmdMethod);
+                                cmdDelegate(userMessages, msg, cmdArgs);
+                            }
                         }
                         catch (Exception e)
                         {
+                            Msg("whatHuh");
                             // HeadlessTweaks.Error failed to execute user's command and send error message
                             Error($"Failed to execute command from {msg.SenderId}: " + cmd, e);
-                            userMessages.SendTextMessage("Error: " + e.Message);
+                            _ = userMessages.SendTextMessage("Error: " + e.Message);
                         }
                     }
                     return;
