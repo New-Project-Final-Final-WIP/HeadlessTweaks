@@ -76,8 +76,9 @@ namespace HeadlessTweaks
             // if it isn't, do nothing
             if (responseTasks.ContainsKey(userMessages))
             {
-                responseTasks[userMessages].TrySetResult(msg);
-                responseTasks.Remove(userMessages);
+                var responseTask = responseTasks[userMessages];
+                responseTasks.Remove(userMessages); // Remove before setting the result to allow multiple response requests to be handled for the same message
+                responseTask.TrySetResult(msg);
                 return;
             }
             switch (msg.MessageType)

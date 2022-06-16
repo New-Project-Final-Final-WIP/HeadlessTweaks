@@ -169,5 +169,24 @@ namespace HeadlessTweaks
             // Extract the record from the message
             return response.ExtractContent<FrooxEngine.Record>();
         }
+
+        public static async Task<string> RequestTextMessage(this UserMessages userMessages, string message, double timeLimit = 45)
+        {
+            _ = userMessages.SendTextMessage(message);
+
+            var response = await userMessages.WaitForResponse(timeLimit);
+
+            if (response == null)
+                return null;
+
+            // Check if response type is an item
+            if (response.MessageType != CloudX.Shared.MessageType.Text)
+            {
+                _ = userMessages.SendTextMessage("Invalid response");
+                return null;
+            }
+            // Extract the record from the message
+            return response.Content;
+        }        
     }
 }

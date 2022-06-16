@@ -66,27 +66,45 @@ namespace HeadlessTweaks
             }
 
             // Start a new world from a template
-            // Usage: /startWorldTemplate [template name]
+            // Usage: /startWorldTemplate [template name...] [?SessionAccessLevel]
 
-            [Command("startWorldTemplate", "Start a new world from a template", PermissionLevel.Moderator, usage: "[template name]")]
+            [Command("startWorldTemplate", "Start a new world from a template", PermissionLevel.Moderator, usage: "[template name...] [?SessionAccessLevel]", "startTemplateWorld")]
             public static async Task StartWorldTemplate(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
                 {
-                    _ = userMessages.SendTextMessage("Usage: /startWorldTemplate [template name]");
+                    _ = userMessages.SendTextMessage("Usage: /startWorldTemplate [template name...] [?SessionAccessLevel]");
                     return;
                 }
-                string templateName = string.Join(" ", args);
+
+                // Check if last arg is a SessionAccessLevel
+                string sessionAccessLevelString = args[args.Length - 1];
+
+                bool isSessionAccessLevel = false;
+                SessionAccessLevel sessionAccessLevel = SessionAccessLevel.Private;
+
+                if (args.Length > 1)
+                {
+                    isSessionAccessLevel = TryParseAccessLevel(sessionAccessLevelString, out SessionAccessLevel parsedAccessLevel);
+                    if (isSessionAccessLevel)
+                    {
+                        sessionAccessLevel = parsedAccessLevel;
+                    }
+                }
+
+                // Get template by name
+                string templateName = string.Join(" ", args.Take(args.Length - (isSessionAccessLevel ? 1 : 0)));
                 templateName.Trim();
 
                 WorldStartupParameters startInfo = new WorldStartupParameters
                 {
-                    LoadWorldPresetName = templateName
+                    LoadWorldPresetName = templateName,
+                    AccessLevel = sessionAccessLevel
                 };
                 if ((await WorldPresets.GetPresets()).FirstOrDefault(p =>
                     p.Name != null && p.Name.Equals(startInfo.LoadWorldPresetName, StringComparison.InvariantCultureIgnoreCase)) == null)
                 {
-                    _ = userMessages.SendTextMessage("Invalid preset name");
+                    _ = userMessages.SendTextMessage($"Invalid preset name '{startInfo.LoadWorldPresetName}'");
                     return;
                 }
 
@@ -96,6 +114,29 @@ namespace HeadlessTweaks
                     _ = userMessages.SendTextMessage("Error Handler Not Found :(");
                     return;
                 }
+
+
+                var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
+                var confirmText = confirmMsg.ToLower();
+
+                if (confirmText == "y" || confirmText == "yes")
+                {
+                    var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
+
+                    if (nameRequest != null)
+                    {
+                        startInfo.SessionName = nameRequest;
+                    }
+                    else
+                    {
+                        _ = userMessages.SendTextMessage("No name entered, using default name");
+                    }
+                }
+
+
+
+
+
 
                 var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
                 await newWorld.Start();
@@ -113,18 +154,31 @@ namespace HeadlessTweaks
             }
 
             // Start a world from the world roster
-            // Usage: /startWorld [world name]
+            // Usage: /startWorld [world name] [?SessionAccessLevel]
 
-            [Command("startWorld", "Start a world", PermissionLevel.Moderator, usage: "[world name]")]
+            [Command("startWorld", "Start a world", PermissionLevel.Moderator, usage: "[world name] [?SessionAccessLevel]")]
             public static async Task StartWorld(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
                 {
-                    _ = userMessages.SendTextMessage("Usage: /startWorld [world name]");
+                    _ = userMessages.SendTextMessage("Usage: /startWorld [world name] [?SessionAccessLevel]");
                     return;
                 }
                 string worldName = args[0];
 
+                SessionAccessLevel sessionAccessLevel = SessionAccessLevel.Private;
+
+                if (args.Length > 1)
+                {
+                    if (TryParseAccessLevel(args[1], out SessionAccessLevel parsedAccessLevel))
+                    {
+                        sessionAccessLevel = parsedAccessLevel;
+                    }
+                    else
+                    {
+                        _ = userMessages.SendTextMessage("Invalid access level, Defaulting to Private");
+                    }
+                }
 
                 var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
                 // Get world from world roster
@@ -138,11 +192,35 @@ namespace HeadlessTweaks
 
                 WorldStartupParameters startInfo = new WorldStartupParameters
                 {
-                    LoadWorldURL = worldUrl
+                    LoadWorldURL = worldUrl,
+                    AccessLevel = sessionAccessLevel
                 };
+
 
                 // Get world handler
                 var handler = GetCommandHandler();
+                if (handler == null)
+                {
+                    _ = userMessages.SendTextMessage("Error Handler Not Found :(");
+                    return;
+                }
+
+                var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
+                var confirmText = confirmMsg.ToLower();
+
+                if (confirmText == "y" || confirmText == "yes")
+                {
+                    var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
+
+                    if (nameRequest != null)
+                    {
+                        startInfo.SessionName = nameRequest;
+                    }
+                    else
+                    {
+                        _ = userMessages.SendTextMessage("No name entered, using default name");
+                    }
+                }
 
                 // Message user that the world is starting
                 _ = userMessages.SendTextMessage("Starting world " + worldName);
@@ -174,33 +252,64 @@ namespace HeadlessTweaks
                 messages.Add("World templates:");
                 foreach (var template in templates)
                 {
-                    messages.Add(template.Name);
+                    messages.Add(template.Name, true);
                 }
-                messages.Send();
+                _ = messages.Send();
             }
 
             // Start a world from a url
-            // Usage: /startWorldUrl [record url]
-            [Command("startWorldUrl", "Start a world from a url", PermissionLevel.Moderator, usage: "[record url]")]
+            // Usage: /startWorldUrl [record url] [?SessionAccessLevel]
+            [Command("startWorldUrl", "Start a world from a url", PermissionLevel.Moderator, usage: "[record url] [?SessionAccessLevel]")]
             public static async Task StartWorldUrl(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
                 {
-                    _ = userMessages.SendTextMessage("Usage: /startWorldUrl [record url]");
+                    _ = userMessages.SendTextMessage("Usage: /startWorldUrl [record url] [?SessionAccessLevel]");
                     return;
                 }
-                string url = string.Join(" ", args);
-                url.Trim();
+                string url = args[0];
+
+                SessionAccessLevel sessionAccessLevel = SessionAccessLevel.Private;
+
+                if (args.Length > 1)
+                {
+                    if (TryParseAccessLevel(args[1], out SessionAccessLevel parsedAccessLevel))
+                    {
+                        sessionAccessLevel = parsedAccessLevel;
+                    }
+                    else
+                    {
+                        _ = userMessages.SendTextMessage("Invalid access level, Defaulting to Private");
+                    }
+                }
 
                 WorldStartupParameters startInfo = new WorldStartupParameters
                 {
-                    LoadWorldURL = url
+                    LoadWorldURL = url,
+                    AccessLevel = sessionAccessLevel
                 };
                 var handler = GetCommandHandler();
                 if (handler == null)
                 {
                     _ = userMessages.SendTextMessage("Error Handler Not Found :(");
                     return;
+                }
+
+                var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
+                var confirmText = confirmMsg.ToLower();
+
+                if (confirmText == "y" || confirmText == "yes")
+                {
+                    var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
+
+                    if (nameRequest != null)
+                    {
+                        startInfo.SessionName = nameRequest;
+                    }
+                    else
+                    {
+                        _ = userMessages.SendTextMessage("No name entered, using default name");
+                    }
                 }
 
                 var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
@@ -224,14 +333,16 @@ namespace HeadlessTweaks
             {
                 // SessionAccessLevel is an emum
                 // parse the string to an enum value
-                SessionAccessLevel? sessionAccessLevel = SessionAccessLevel.Private;
+                SessionAccessLevel sessionAccessLevel = SessionAccessLevel.Private;
 
                 if (args.Length > 0)
                 {
                     if (TryParseAccessLevel(args[0], out SessionAccessLevel parsedAccessLevel))
                     {
                         sessionAccessLevel = parsedAccessLevel;
-                    } else {
+                    }
+                    else
+                    {
                         _ = userMessages.SendTextMessage("Invalid access level, Defaulting to Private");
                     }
                 }
@@ -252,12 +363,12 @@ namespace HeadlessTweaks
                 if (worldUrl == null)
                     return;
 
-                _ = userMessages.SendTextMessage("Found world orb, starting world...");
+                _ = userMessages.SendTextMessage("Found world orb");
                 // Create the world
                 WorldStartupParameters startInfo = new WorldStartupParameters
                 {
                     LoadWorldURL = worldUrl.ToString(),
-                    AccessLevel = sessionAccessLevel.Value
+                    AccessLevel = sessionAccessLevel
                 };
 
                 var handler = GetCommandHandler();
@@ -265,6 +376,23 @@ namespace HeadlessTweaks
                 {
                     _ = userMessages.SendTextMessage("Error Handler Not Found :(");
                     return;
+                }
+
+                var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
+                var confirmText = confirmMsg.ToLower();
+
+                if (confirmText == "y" || confirmText == "yes")
+                {
+                    var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
+
+                    if (nameRequest != null)
+                    {
+                        startInfo.SessionName = nameRequest;
+                    }
+                    else
+                    {
+                        _ = userMessages.SendTextMessage("No name entered, using default name");
+                    }
                 }
 
                 _ = userMessages.SendTextMessage("Starting world...");
@@ -512,21 +640,12 @@ namespace HeadlessTweaks
                     return;
 
                 // Wait for response from the user to confirm they want to close the world
-                await userMessages.SendTextMessage("Are you sure you want to close this world? (y/n)");
-                var confirmMsg = await userMessages.WaitForResponse(32);
+                var confirmMsg = await userMessages.RequestTextMessage("Are you sure you want to close this world? (y/n)", 32);
                 if (confirmMsg == null)
                 {
                     return;
                 }
-
-                // Make sure its a text message
-                if (confirmMsg.MessageType != CloudX.Shared.MessageType.Text)
-                {
-                    _ = userMessages.SendTextMessage("Invalid response");
-                    return;
-                }
-
-                var confirmText = confirmMsg.Content.ToLower();
+                var confirmText = confirmMsg.ToLower();
 
                 if (confirmText == "y" || confirmText == "yes")
                 {
@@ -579,6 +698,32 @@ namespace HeadlessTweaks
                     world.HideFromListing = hidden;
 
                 _ = userMessages.SendTextMessage($"Session access level set to {(hidden ? "Hidden, " : "")}{accessLevel} for {world.Name}");
+            }
+
+            // set session name command
+            // Usage: /setSessionName [?target world...]
+            // alias: setWorldName, worldName, sessionName
+            [Command("setSessionName", "Set the name of a session", PermissionLevel.Moderator, usage: "[?target world...]", "setWorldName", "worldName", "sessionName")]
+            public static async Task SetSessionName(UserMessages userMessages, Message msg, string[] args)
+            {
+                // Get the world name from joining the args
+                var worldName = string.Join(" ", args);
+                worldName.Trim();
+
+                // Get the users world or focused world
+                var world = GetWorldOrUserWorld(userMessages, worldName, msg.SenderId, false);
+                if (world == null)
+                    return;
+
+                // Get the new name
+                var newName = await userMessages.RequestTextMessage("Enter the new name for the session");
+                if (newName == null)
+                    return;
+
+                // Set the name
+                world.Name = newName;
+
+                _ = userMessages.SendTextMessage($"Session name set to {newName}");
             }
         }
     }
