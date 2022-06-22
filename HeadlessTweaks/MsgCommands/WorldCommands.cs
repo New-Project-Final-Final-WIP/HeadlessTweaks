@@ -81,7 +81,7 @@ namespace HeadlessTweaks
                 string sessionAccessLevelString = args[args.Length - 1];
 
                 bool isSessionAccessLevel = false;
-                SessionAccessLevel sessionAccessLevel = SessionAccessLevel.Private;
+                SessionAccessLevel sessionAccessLevel = HeadlessTweaks.DefaultSessionAccessLevel.GetValue();
 
                 if (args.Length > 1)
                 {
@@ -99,7 +99,8 @@ namespace HeadlessTweaks
                 WorldStartupParameters startInfo = new WorldStartupParameters
                 {
                     LoadWorldPresetName = templateName,
-                    AccessLevel = sessionAccessLevel
+                    AccessLevel = sessionAccessLevel,
+                    HideFromPublicListing = HeadlessTweaks.DefaultSessionHidden.GetValue()
                 };
                 if ((await WorldPresets.GetPresets()).FirstOrDefault(p =>
                     p.Name != null && p.Name.Equals(startInfo.LoadWorldPresetName, StringComparison.InvariantCultureIgnoreCase)) == null)
@@ -166,7 +167,8 @@ namespace HeadlessTweaks
                 }
                 string worldName = args[0];
 
-                SessionAccessLevel sessionAccessLevel = SessionAccessLevel.Private;
+                
+                SessionAccessLevel sessionAccessLevel = HeadlessTweaks.DefaultSessionAccessLevel.GetValue();
 
                 if (args.Length > 1)
                 {
@@ -193,7 +195,8 @@ namespace HeadlessTweaks
                 WorldStartupParameters startInfo = new WorldStartupParameters
                 {
                     LoadWorldURL = worldUrl,
-                    AccessLevel = sessionAccessLevel
+                    AccessLevel = sessionAccessLevel,
+                    HideFromPublicListing = HeadlessTweaks.DefaultSessionHidden.GetValue()
                 };
 
 
@@ -269,7 +272,7 @@ namespace HeadlessTweaks
                 }
                 string url = args[0];
 
-                SessionAccessLevel sessionAccessLevel = SessionAccessLevel.Private;
+                SessionAccessLevel sessionAccessLevel = HeadlessTweaks.DefaultSessionAccessLevel.GetValue();
 
                 if (args.Length > 1)
                 {
@@ -286,7 +289,8 @@ namespace HeadlessTweaks
                 WorldStartupParameters startInfo = new WorldStartupParameters
                 {
                     LoadWorldURL = url,
-                    AccessLevel = sessionAccessLevel
+                    AccessLevel = sessionAccessLevel,
+                    HideFromPublicListing = HeadlessTweaks.DefaultSessionHidden.GetValue()
                 };
                 var handler = GetCommandHandler();
                 if (handler == null)
@@ -333,7 +337,7 @@ namespace HeadlessTweaks
             {
                 // SessionAccessLevel is an emum
                 // parse the string to an enum value
-                SessionAccessLevel sessionAccessLevel = SessionAccessLevel.Private;
+                SessionAccessLevel sessionAccessLevel = HeadlessTweaks.DefaultSessionAccessLevel.GetValue();
 
                 if (args.Length > 0)
                 {
@@ -368,7 +372,8 @@ namespace HeadlessTweaks
                 WorldStartupParameters startInfo = new WorldStartupParameters
                 {
                     LoadWorldURL = worldUrl.ToString(),
-                    AccessLevel = sessionAccessLevel
+                    AccessLevel = sessionAccessLevel,
+                    HideFromPublicListing = HeadlessTweaks.DefaultSessionHidden.GetValue()
                 };
 
                 var handler = GetCommandHandler();

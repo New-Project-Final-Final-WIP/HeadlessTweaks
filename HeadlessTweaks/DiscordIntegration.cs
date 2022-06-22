@@ -12,6 +12,47 @@ namespace HeadlessTweaks
     {
         public static DiscordWebhookClient discordWebhook;
 
+        public static string DiscordWebhookName
+        {
+            get
+            {
+                var username = HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookUsername);
+
+                // if the username is empty, use the default username
+                if (string.IsNullOrWhiteSpace(username))
+                {
+                    username = Engine.Current.LocalUserName;
+                }
+                return username;
+            }
+        }
+        
+        public static string DiscordWebhookAvatar
+        {
+            get
+            {
+                var avatarUrl = HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookAvatar);
+
+                // if the avatarUrl is empty, use the default avatarUrl
+                if (string.IsNullOrWhiteSpace(avatarUrl))
+                {
+                    avatarUrl = Engine.Current.Cloud?.CurrentUser?.Profile?.IconUrl;
+                }
+
+                Uri uri = CloudX.Shared.CloudXInterface.TryFromString(avatarUrl);
+                if (uri == null)
+                { // if the avatarUrl is not a valid url, use the default avatarUrl
+                    uri = NeosAssets.Graphics.Thumbnails.AnonymousHeadset;
+                }
+                if (CloudX.Shared.CloudXInterface.IsValidNeosDBUri(uri))
+                { // Convert from NeosDB to Https if needed
+                    uri = CloudX.Shared.CloudXInterface.NeosDBToHttp(uri, CloudX.Shared.NeosDB_Endpoint.CDN);
+                }
+                avatarUrl = uri.ToString();
+                return avatarUrl;
+            }
+        }
+
         public static void Init(Harmony harmony)
         {
             if (!HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook)) return;
@@ -97,11 +138,18 @@ namespace HeadlessTweaks
         }
         public class DiscordHelper 
         {
-            public static void SendMessage(string message)
+            public static async void SendMessage(string message)
             {
-                discordWebhook.SendMessageAsync(text: message, username: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookUsername), avatarUrl: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookAvatar));
+                try
+                {
+                    await discordWebhook.SendMessageAsync(text: message, username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar);
+                }
+                catch (Exception e)
+                {
+                    NeosModLoader.NeosMod.Error(e.ToString());
+                }
             }
-            public static void SendEmbed(string message, Color color)
+            public static async void SendEmbed(string message, Color color)
             {
                 List<Embed> embedList = new List<Embed>();
                 var embed = new EmbedBuilder
@@ -110,7 +158,14 @@ namespace HeadlessTweaks
                     Color = color
                 };
                 embedList.Add(embed.Build());
-                discordWebhook.SendMessageAsync(username: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookUsername), avatarUrl: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookAvatar), embeds: embedList);
+                try
+                {
+                    await discordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList);
+                }
+                catch (Exception e)
+                {
+                    NeosModLoader.NeosMod.Error(e.ToString());
+                }
             }
             public static void SendStartEmbed(Engine engine, string action, Color color)
             {
@@ -172,7 +227,15 @@ namespace HeadlessTweaks
                 embed.WithAuthor(name: userName, iconUrl: userIcon, url: userUri);
                 //embed.WithCurrentTimestamp();
                 embedList.Add(embed.Build());
-                await discordWebhook.SendMessageAsync(username: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookUsername), avatarUrl: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookAvatar), embeds: embedList);
+
+                try
+                {
+                    await discordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList);
+                }
+                catch (Exception e)
+                {
+                    NeosModLoader.NeosMod.Error(e.ToString());
+                }
             }
         }
     }

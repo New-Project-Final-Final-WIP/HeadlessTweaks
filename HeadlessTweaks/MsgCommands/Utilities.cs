@@ -171,19 +171,22 @@ namespace HeadlessTweaks
                 Prefix = prefix;
             }
             // add a message to the list
-            public void Add(string message, bool modulateAlpha = false)
+            public void Add(string message, bool modulateAlpha = false, bool forceNewMessage = false)
             {
                 if (modulateAlpha)
                 {
-                    if(_alphaMod)
+                    var secondaryAlpha = HeadlessTweaks.AlternateListAlpha.GetValue();
+                    if (_alphaMod && secondaryAlpha.HasValue)
                     {
-                        message = AlphaMessage(message, 0.7f);
+                        message = AlphaMessage(message, secondaryAlpha.Value);
                     }
                     _alphaMod = !_alphaMod;
                 } else {
                     _alphaMod = true; // reset alpha mod to true so if modulation continues it will start with alpha
                 }
-                if (Messages.Count != 0 && Messages.Last().Length + message.Length < 512)
+                // TODO: if the message is too long, split it into multiple messages before continuing
+
+                if (!forceNewMessage && Messages.Count != 0 && Messages.Last().Length + message.Length < 512)
                 {
                     Messages[Messages.Count - 1] += "\n" + message;
                 }

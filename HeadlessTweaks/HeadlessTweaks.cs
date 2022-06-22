@@ -2,6 +2,7 @@ using HarmonyLib;
 using NeosModLoader;
 using System;
 using System.Collections.Generic;
+using CloudX.Shared;
 
 namespace HeadlessTweaks
 {
@@ -24,9 +25,9 @@ namespace HeadlessTweaks
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<string> DiscordWebhookKey = new ModConfigurationKey<string>("DiscordWebhookKey", "Discord Webhook Key", () => null);
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<string> DiscordWebhookUsername = new ModConfigurationKey<string>("DiscordWebhookUsername", "Discord Webhook Username", () => "New Headless");  // TODO: Change to "Headless"
+        public static readonly ModConfigurationKey<string> DiscordWebhookUsername = new ModConfigurationKey<string>("DiscordWebhookUsername", "Discord Webhook Username", () => null);
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<string> DiscordWebhookAvatar = new ModConfigurationKey<string>("DiscordWebhookAvatar", "Discord Webhook Avatar", () => "https://newweb.page/assets/images/logo.png"); // TODO: change to some other image
+        public static readonly ModConfigurationKey<string> DiscordWebhookAvatar = new ModConfigurationKey<string>("DiscordWebhookAvatar", "Discord Webhook Avatar", () => null);
         
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<List<string>> AutoInviteOptOut = new ModConfigurationKey<List<string>>("AutoInviteOptOut", "Auto Invite Opt Out", () => new List<string>(), internalAccessOnly: true);
@@ -46,11 +47,23 @@ namespace HeadlessTweaks
         });
 
 
+        // Default session access level for new sessions
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<SessionAccessLevel> DefaultSessionAccessLevel = new ModConfigurationKey<SessionAccessLevel>("DefaultSessionAccessLevel", "Default Session Access Level", () => SessionAccessLevel.FriendsOfFriends);
 
+        // Default session hidden status for new sessions
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<bool> DefaultSessionHidden = new ModConfigurationKey<bool>("DefaultSessionHidden", "Default Session Hidden", () => true);
 
+        // secondary alpha for lists in messages float
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<float?> AlternateListAlpha = new ModConfigurationKey<float?>("AlternateListAlpha", "Alternate List Alpha", () => 0.7f);
+
+        
         // ConfigSaved 
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<bool> configSaved = new ModConfigurationKey<bool>("_configSaved", "_configSaved", internalAccessOnly:true);
+
 
         public override void OnEngineInit()
         {
