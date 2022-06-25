@@ -30,6 +30,7 @@ Here are some explinations for the options available.
 
 ### Discord Features
 ⚠ **Discord.NET Dependency** ⚠
+
 [Discord.NET](https://discordnet.dev) libraries are a required dependency to use Discord features. Please install your Discord.NET DLLs in your `nml_libs` directory if `UseDiscordWebhook` is set to `true`.
 
 You have the option to enable Discord integration for a Discord channel. A variety of events will get logged in Discord according to a webhook you specify. When configured, a variety of events will get logged to the channel such as session start/close, user joins/leaves, and world saves.
