@@ -10,13 +10,13 @@ namespace HeadlessTweaks
 
     partial class MessageCommands
     {
-        partial class Commands
+        public partial class Commands
         {
             // Show help
             // Usage: /help [?command]
             // If no command is given show all commands
 
-            [Command("help", "Shows this help message", usage: "[?command]")]
+            [Command("help", "Shows this help message", "Common", usage: "[?command]")]
             public static void Help(UserMessages userMessages, Message msg, string[] args)
             {
                 var messages = new BatchMessageHelper(userMessages);
@@ -44,6 +44,7 @@ namespace HeadlessTweaks
                      * 
                      * /name usage
                      * description
+                     * category
                      * aliases
                      */
 
@@ -51,6 +52,8 @@ namespace HeadlessTweaks
                     messages.Add($"/{attr.Name} {attr.Usage}");
                     messages.Add(attr.Description);
 
+                    messages.Add("Category: " + attr.Category);
+                    
                     if (attr.Aliases.Length > 0)
                     {
                         messages.Add("Aliases:");
@@ -103,7 +106,7 @@ namespace HeadlessTweaks
             // Toggle Opt out of auto-invites
             // Usage: /optOut
 
-            [Command("optOut", "Toggles opt out of auto-invites")]
+            [Command("optOut", "Toggles opt out of auto-invites", "Common")]
             public static void OptOut(UserMessages userMessages, Message msg, string[] args)
             {
                 var optOut = HeadlessTweaks.config.GetValue(HeadlessTweaks.AutoInviteOptOut);
@@ -124,7 +127,7 @@ namespace HeadlessTweaks
             // Mark all as read
             // Usage: /markAllRead
 
-            [Command("markAllRead", "Marks all messages as read")]
+            [Command("markAllRead", "Marks all messages as read", "Common")]
             public static void MarkAllRead(UserMessages userMessages, Message msg, string[] args)
             {
                 userMessages.MarkAllRead();
@@ -133,7 +136,7 @@ namespace HeadlessTweaks
             // Invite me to a specific world by name or to the current world if no name is given
             // Usage: /reqInvite [?world name...]
 
-            [Command("reqInvite", "Requests an invite to a world", PermissionLevel.None, usage: "[?world name...]", "requestInvite")]
+            [Command("reqInvite", "Requests an invite to a world", "Common", PermissionLevel.None, usage: "[?world name...]", "requestInvite")]
             public static void ReqInvite(UserMessages userMessages, Message msg, string[] args)
             {
                 World world = null;
@@ -182,7 +185,7 @@ namespace HeadlessTweaks
             // Usage: /getSessionOrb [?world name...]
             // If no world name is given, it will get the session orb of the user's world
 
-            [Command("getSessionOrb", "Get session orb", usage: "[?world name...]")]
+            [Command("getSessionOrb", "Get session orb", "Common", usage: "[?world name...]")]
             public static void GetSessionOrb(UserMessages userMessages, Message msg, string[] args)
             {
                 // Get world by name or user world
@@ -209,7 +212,7 @@ namespace HeadlessTweaks
             // List worlds
             // Usage: /worlds
 
-            [Command("worlds", "List all worlds")]
+            [Command("worlds", "List all worlds", "Common")]
             public static void Worlds(UserMessages userMessages, Message msg, string[] args)
             {
                 var messages = new BatchMessageHelper(userMessages);
@@ -226,7 +229,7 @@ namespace HeadlessTweaks
             // Throw an error
             // Usage: /throwErr
 
-            [Command("throwErr", "Throw Error", PermissionLevel.Owner)]
+            [Command("throwErr", "Throw Error", "Debug", PermissionLevel.Owner)]
             public static void ThrowError(UserMessages userMessages, Message msg, string[] args)
             {
                 throw new System.Exception("Error Thrown");
@@ -236,7 +239,7 @@ namespace HeadlessTweaks
             // Throw an error asynchronously
             // Usage: /throwErrAsync
 
-            [Command("throwErrAsync", "Throw Error Asynchronously", PermissionLevel.Owner)]
+            [Command("throwErrAsync", "Throw Error Asynchronously", "Debug", PermissionLevel.Owner)]
             public static async System.Threading.Tasks.Task ThrowErrorAsync(UserMessages userMessages, Message msg, string[] args)
             {
                 throw new System.Exception("Async Error Thrown");

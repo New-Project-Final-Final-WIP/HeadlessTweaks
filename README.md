@@ -6,6 +6,10 @@ A [NeosModLoader](https://github.com/neos-modding-group/NeosModLoader) mod for [
 Adds various commands that you can send to the headless by messaging the headless account in Neos
  - Try sending `/help` to the headless
 
+You can also view the [list of commands here](CommandList.md)
+
+
+
 Commands are restricted via permission levels,
 The permission levels are:
 ```

@@ -10,12 +10,12 @@ namespace HeadlessTweaks
 {
     partial class MessageCommands
     {
-        partial class Commands
+        public partial class Commands
         {
             // Message User
             // Usage: /message [user id] [message]
 
-            [Command("message", "Message a user", PermissionLevel.Owner, usage: "[user id] [message]")]
+            [Command("message", "Message a user", "Headless Management", PermissionLevel.Owner, usage: "[user id] [message]")]
             public static void Message(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 2)
@@ -40,7 +40,7 @@ namespace HeadlessTweaks
             // List headless friends
             // Usage: /friends
 
-            [Command("friends", "List headless friends", PermissionLevel.Owner)]
+            [Command("friends", "List headless friends", "Headless Management", PermissionLevel.Owner)]
             public static void Friends(UserMessages userMessages, Message msg, string[] args)
             {
                 // Engine.Current.Cloud.Friends.GetFriends();
@@ -60,7 +60,7 @@ namespace HeadlessTweaks
             // Accept friend request
             // Usage: /acceptFriend [user id]
 
-            [Command("acceptFriend", "Accept friend request", PermissionLevel.Owner, usage: "[user id]")]
+            [Command("acceptFriend", "Accept friend request", "Headless Management", PermissionLevel.Owner, usage: "[user id]")]
             public static void Acceptfriend(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
@@ -86,7 +86,7 @@ namespace HeadlessTweaks
             // Add friend
             // Usage: /addFriend [user id]
 
-            [Command("addFriend", "Add friend", PermissionLevel.Owner, usage: "[user id]")]
+            [Command("addFriend", "Add friend", "Headless Management", PermissionLevel.Owner, usage: "[user id]")]
             public static void Addfriend(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
@@ -117,7 +117,7 @@ namespace HeadlessTweaks
             // Remove friend
             // Usage: /removeFriend [user id]
 
-            [Command("removeFriend", "Remove friend", PermissionLevel.Owner, usage: "[user id]")]
+            [Command("removeFriend", "Remove friend", "Headless Management", PermissionLevel.Owner, usage: "[user id]")]
             public static void Removefriend(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
