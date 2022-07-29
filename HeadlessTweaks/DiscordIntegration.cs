@@ -4,7 +4,6 @@ using System;
 using Discord;
 using System.Collections.Generic;
 using Discord.Webhook;
-using CloudX;
 
 namespace HeadlessTweaks
 {
@@ -149,6 +148,14 @@ namespace HeadlessTweaks
                     NeosModLoader.NeosMod.Error(e.ToString());
                 }
             }
+
+
+            public static void SendEmbed(string message, BaseX.color color)
+            {
+                SendEmbed(message, new Color(color.r, color.g, color.b));
+            }
+
+            
             public static async void SendEmbed(string message, Color color)
             {
                 List<Embed> embedList = new List<Embed>();

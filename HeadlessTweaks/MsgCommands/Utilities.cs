@@ -42,7 +42,9 @@ namespace HeadlessTweaks
 
         private static bool CanUserJoin(World world, string userId)
         {
-            return GetUserPermissionLevel(userId) > PermissionLevel.None || world.IsUserAllowed(userId);
+            bool isContact = Engine.Current.Cloud.Friends.IsFriend(userId);
+            bool isContactsOrAbove = world.AccessLevel >= SessionAccessLevel.Friends;
+            return GetUserPermissionLevel(userId) > PermissionLevel.None || world.IsUserAllowed(userId) || (isContact && isContactsOrAbove);
         }
 
         private static World GetWorld(UserMessages userMessages, string worldName)

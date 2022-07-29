@@ -10,7 +10,7 @@ namespace HeadlessTweaks
     {
         public override string Name => "HeadlessTweaks";
         public override string Author => "New-Project-Final-Final-WIP";
-        public override string Version => "1.1.0";
+        public override string Version => "1.2.0";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isHeadless;
@@ -58,10 +58,21 @@ namespace HeadlessTweaks
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<float?> AlternateListAlpha = new ModConfigurationKey<float?>("AlternateListAlpha", "Alternate List Alpha", () => 0.7f);
 
-        
+
+
+        // Disable autosave if no one is in world
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<bool> SmartAutosaveEnabled = new ModConfigurationKey<bool>("SmartAutosave", "Disable autosave if there are no users in current world", () => false);
+
+
+
+
         // ConfigSaved 
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<bool> configSaved = new ModConfigurationKey<bool>("_configSaved", "_configSaved", internalAccessOnly:true);
+
+
+        
 
 
         public override void OnEngineInit()
@@ -100,6 +111,7 @@ namespace HeadlessTweaks
             }
             NewHeadlessCommands.Init(harmony);
             MessageCommands.Init(harmony);
+            SmartAutosave.Init(harmony);
         }
     }
 }

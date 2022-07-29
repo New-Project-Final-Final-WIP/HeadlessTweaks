@@ -44,8 +44,9 @@ namespace HeadlessTweaks
                         HeadlessTweaks.Warn("Invalid permission level");
                     }
                 }));
-                
-                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook))
+
+                bool discordExists = AccessTools.TypeByName("Discord.Webhook.DiscordWebhookClient") != null;
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook) && discordExists)
                 {
                     handler.RegisterCommand(new GenericCommand("sendToDiscord", "Sends a message to discord", "<message>", (h, world, args) =>
                     {
@@ -55,7 +56,7 @@ namespace HeadlessTweaks
                             return;
                         }
 
-                        DiscordIntegration.DiscordHelper.SendEmbed(string.Join(" ", args.ToArray()), new Discord.Color(0xbb5ec8));
+                        DiscordIntegration.DiscordHelper.SendEmbed(string.Join(" ", args.ToArray()), BaseX.color.FromHexCode("#bb5ec8"));
                     }));
                 }
             }

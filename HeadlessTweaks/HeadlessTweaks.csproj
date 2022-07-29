@@ -41,17 +41,14 @@
     <Reference Include="CloudX.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Neos_Data\Managed\CloudX.Shared.dll</HintPath>
     </Reference>
-    <Reference Include="Discord.Net.Core, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Discord.Net.Core.3.0.0\lib\net461\Discord.Net.Core.dll</HintPath>
+    <Reference Include="Discord.Net.Core, Version=3.7.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Core.3.7.2\lib\net461\Discord.Net.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Discord.Net.Interactions, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Discord.Net.Interactions.3.0.0\lib\net461\Discord.Net.Interactions.dll</HintPath>
+    <Reference Include="Discord.Net.Rest, Version=3.7.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Rest.3.7.2\lib\net461\Discord.Net.Rest.dll</HintPath>
     </Reference>
-    <Reference Include="Discord.Net.Rest, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Discord.Net.Rest.3.0.0\lib\net461\Discord.Net.Rest.dll</HintPath>
-    </Reference>
-    <Reference Include="Discord.Net.Webhook, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Discord.Net.Webhook.3.0.0\lib\netstandard2.0\Discord.Net.Webhook.dll</HintPath>
+    <Reference Include="Discord.Net.Webhook, Version=3.7.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Webhook.3.7.2\lib\netstandard2.0\Discord.Net.Webhook.dll</HintPath>
     </Reference>
     <Reference Include="FrooxEngine">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Neos_Data\Managed\FrooxEngine.dll</HintPath>
@@ -122,6 +119,7 @@
     <Compile Include="HeadlessTweaks.cs" />
     <Compile Include="PermissionLevel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SmartAutosave.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
