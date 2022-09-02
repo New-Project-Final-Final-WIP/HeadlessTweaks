@@ -21,6 +21,9 @@
     <DebugSymbols Condition="'$(Configuration)'=='Release'">false</DebugSymbols>
     <DebugType Condition="'$(Configuration)'=='Release'">None</DebugType>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\README.md" Link="README.md" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="0Harmony">
