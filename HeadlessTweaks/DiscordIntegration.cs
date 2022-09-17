@@ -99,16 +99,19 @@ namespace HeadlessTweaks
         {
             public static void WorldCreated(World world)
             {
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookDisabledEvents)?.Contains("WorldStarted") ?? false) return;
                 DiscordHelper.SendWorldEmbed(world, "Started", new Color(r: 0.0f, g: 0.8f, b: 0.8f));
                 return;
             }
             public static void WorldSaved(World world)
             {
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookDisabledEvents)?.Contains("WorldSaved") ?? false) return;
                 DiscordHelper.SendWorldEmbed(world, "Saved", new Color(r: 0.8f, g: 0.8f, b: 0.0f));
                 return;
             }
             public static void WorldDestroyed(World world)
             {
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookDisabledEvents)?.Contains("WorldClosing") ?? false) return;
                 DiscordHelper.SendWorldEmbed(world, "Closing", new Color(r: 0.8f, g: 0.2f, b: 0.0f));
                 return;
             }
@@ -119,19 +122,22 @@ namespace HeadlessTweaks
                     WorldCreated(user.World);
                     if (user.HeadDevice == HeadOutputDevice.Headless) return;
                 }
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookDisabledEvents)?.Contains("UserJoined") ?? false) return;
                 DiscordHelper.SendUserEmbed(user, "Joined", new Color(r: 0.0f, g: 0.8f, b: 0.0f));
             }
             public static void UserLeft(User user)
             {
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookDisabledEvents)?.Contains("UserLeft") ?? false) return;
                 DiscordHelper.SendUserEmbed(user, "Left", new Color(r: 0.8f, g: 0.0f, b: 0.0f));
             }
             public static void HeadlessStartup()
             {
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookDisabledEvents)?.Contains("HeadlessStarted") ?? false) return;
                 DiscordHelper.SendStartEmbed(Engine.Current, "Headless [{1}] started with version {0}", new Color(r: 0.0f, g: 0.0f, b: 1.0f));
             }
             public static void HeadlessShutdown()
             {
-
+                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookDisabledEvents)?.Contains("HeadlessShutdown") ?? false) return;
                 DiscordHelper.SendStartEmbed(Engine.Current, "Shutting down Headless [{1}]", new Color(r: 1.0f, g: 0.0f, b: 0.0f));
             }
         }

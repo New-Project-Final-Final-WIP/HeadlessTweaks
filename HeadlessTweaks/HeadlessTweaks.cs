@@ -10,7 +10,7 @@ namespace HeadlessTweaks
     {
         public override string Name => "HeadlessTweaks";
         public override string Author => "New-Project-Final-Final-WIP";
-        public override string Version => "1.2.0";
+        public override string Version => "1.3.0";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isHeadless;
@@ -28,6 +28,8 @@ namespace HeadlessTweaks
         public static readonly ModConfigurationKey<string> DiscordWebhookUsername = new ModConfigurationKey<string>("DiscordWebhookUsername", "Discord Webhook Username", () => null);
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<string> DiscordWebhookAvatar = new ModConfigurationKey<string>("DiscordWebhookAvatar", "Discord Webhook Avatar", () => null);
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<List<string>> DiscordWebhookDisabledEvents = new ModConfigurationKey<List<string>>("DiscordWebhookDisabledEvents", "Discord Webhook Events without notification", () => new List<string>());
         
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<List<string>> AutoInviteOptOut = new ModConfigurationKey<List<string>>("AutoInviteOptOut", "Auto Invite Opt Out", () => new List<string>(), internalAccessOnly: true);
