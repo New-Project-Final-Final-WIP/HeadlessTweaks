@@ -143,8 +143,8 @@ namespace HeadlessTweaks
                     return;
             }
         }
-
-        public static void Prefix(ref WorldStartupParameters info, out List<string> __state)
+        // TODO Transpile this instead
+        public static void Prefix(WorldStartupParameters info, out List<string> __state)
         {
             if (info.AutoInviteUsernames == null)
             {
@@ -154,23 +154,30 @@ namespace HeadlessTweaks
             __state = new List<string>(info.AutoInviteUsernames);
             info.AutoInviteUsernames.Clear();
         }
-        public static void Postfix(WorldStartupParameters info, List<string> __state, World world)
+        public static void Postfix(WorldStartupParameters info, List<string> __state, World world, Task __result)
         {
             //AutoInviteOptOut
             if (__state == null || __state.Count <= 0)
                 return;
             if (world.Engine.Cloud.CurrentUser == null)
             {
-                UniLog.Log("Not logged in, cannot send auto-invites!", false);
+                UniLog.Log("Not logged in, cannot send auto-invites!");
                 return;
             }
 
-            if (__state == null) return;
-            Task.Run(async () =>
+            world.Coroutines.StartTask(async delegate 
             {
-                foreach (string autoInviteUsername in __state)
+                /* The hubris of programmers can be a cause of their downfall, especially when dealing with complex systems.
+                 * This act of laziness can lead to a cascade of issues that can exacerbate the original problem and make it difficult to resolve.
+                 * Despite this, some programmers settle with a different bad solution that works and is bad, rather than seeking help or taking the time to transpile a method.
+                 * It takes humility and discipline to do things properly and avoid taking shortcuts that can lead to long-term negative consequences. 
+                 * That humility is not mine.
+                */
+                await __result; // ;-;
+                info.AutoInviteUsernames.AddRange(__state);
+
+                foreach (string username in __state)
                 {
-                    string username = autoInviteUsername;
                     Friend friend = world.Engine.Cloud.Friends.FindFriend(f =>
                         f.FriendUsername.Equals(username, StringComparison.InvariantCultureIgnoreCase));
 
@@ -182,16 +189,14 @@ namespace HeadlessTweaks
                     {
                         if (HeadlessTweaks.AutoInviteOptOut.GetValue().Contains(friend.FriendUserId)) continue;
 
-                        MessageManager.UserMessages messages = world.Engine.Cloud.Messages.GetUserMessages(friend.FriendUserId);
+                        UserMessages messages = world.Engine.Cloud.Messages.GetUserMessages(friend.FriendUserId);
                         if (!string.IsNullOrWhiteSpace(info.AutoInviteMessage))
                         {
-                            int num1 = await messages.SendTextMessage(info.AutoInviteMessage) ? 1 : 0;
+                            await messages.SendTextMessage(info.AutoInviteMessage);
                         }
                         world.AllowUserToJoin(friend.FriendUserId);
-                        int num2 = await messages.SendMessage(messages.CreateInviteMessage(world)) ? 1 : 0;
-                        UniLog.Log(username + " invited.", false);
-                        friend = null;
-                        messages = null;
+                        await messages.SendMessage(messages.CreateInviteMessage(world));
+                        UniLog.Log(username + " invited.");
                     }
                 }
             });
