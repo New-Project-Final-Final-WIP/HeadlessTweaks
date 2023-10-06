@@ -1,11 +1,10 @@
-﻿using BaseX;
-using System;
+﻿using System;
 using FrooxEngine;
 using System.Linq;
-using CloudX.Shared;
+using SkyFrost.Base;
 
-using static CloudX.Shared.MessageManager;
 using System.Threading.Tasks;
+using QuantityX;
 
 namespace HeadlessTweaks
 {
@@ -28,21 +27,18 @@ namespace HeadlessTweaks
                 var users = world.AllUsers.ToList();
 
                 var messages = new BatchMessageHelper(userMessages);
-                messages.Add(world.UserCount + " users in world " + world.Name + ((world.UserCount != 0) ? ":" : ""));
+                messages.Add($"{world.UserCount} users in the world \"{world.Name}\"{((world.UserCount != 0)?':':null)}");
                 foreach (var user in users)
                 {
-                    // Return username
-                    // grey out if user is not present in the world 
-                    if (user.IsPresent)
+                    string usrMsg = user.UserName;
+                    if (!user.IsPresent)
                     {
-                        messages.Add(user.UserName);
+                        messages.Add($"<i>{usrMsg}</i>", RadiantUI_Constants.Neutrals.MIDLIGHT);
+                        continue;
                     }
-                    else
-                    {
-                        messages.Add("<i>" + user.UserName + "</i>", color.Black.SetA(0.75f));
-                    }
+                    messages.Add(usrMsg);
                 }
-                messages.Send();
+                _ = messages.Send();
             }
 
             // Save world
@@ -52,106 +48,50 @@ namespace HeadlessTweaks
             [Command("saveWorld", "Saves a world", "World Management", PermissionLevel.Moderator, usage: "[?world name...]")]
             public static async Task SaveWorld(UserMessages userMessages, Message msg, string[] args)
             {
-                string worldName = string.Join(" ", args);
-                worldName.Trim();
-
-                // Get world by name or user world
+                string worldName = string.Join(" ", args).Trim();
 
                 World world = GetWorldOrUserWorld(userMessages, worldName, msg.SenderId);
                 if (world == null) return;
 
+                _ = userMessages.SendTextMessage($"Starting save for world \"{world.Name}\"");
+                var currentTime = DateTime.Now;
                 await Userspace.SaveWorldAuto(world, SaveType.Overwrite, false);
 
-                _ = userMessages.SendTextMessage("Saved world " + worldName);
+                // QuantityX has nice to string formatting for a lot of things, though this looks a little silly
+                Time timeElapsed = new((DateTime.Now - currentTime).TotalSeconds);
+                _ = userMessages.SendTextMessage($"Saved world \"{world.Name}\" in {timeElapsed.FormatAuto("0.##")}");
             }
 
             // Start a new world from a template
-            // Usage: /startWorldTemplate [template name...] [?SessionAccessLevel]
+            // Usage: /startWorldTemplate [template name] [?SessionAccessLevel]
 
-            [Command("startWorldTemplate", "Start a new world from a template", "World Management", PermissionLevel.Moderator, usage: "[template name...] [?SessionAccessLevel]", "startTemplateWorld")]
+            [Command("startWorldTemplate", "Start a new world from a template", "World Management", PermissionLevel.Moderator, usage: "[template name] [?SessionAccessLevel]", "startTemplateWorld")]
             public static async Task StartWorldTemplate(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
                 {
-                    _ = userMessages.SendTextMessage("Usage: /startWorldTemplate [template name...] [?SessionAccessLevel]");
+                    _ = userMessages.SendTextMessage("Usage: /startWorldTemplate [template name] [?SessionAccessLevel]");
                     return;
                 }
 
-                // Check if last arg is a SessionAccessLevel
-                string sessionAccessLevelString = args[args.Length - 1];
-
-                bool isSessionAccessLevel = false;
                 SessionAccessLevel sessionAccessLevel = HeadlessTweaks.DefaultSessionAccessLevel.GetValue();
-
-                if (args.Length > 1)
+                if (args.Length > 1 && !TryParseAccessLevel(args[1], out sessionAccessLevel))
                 {
-                    isSessionAccessLevel = TryParseAccessLevel(sessionAccessLevelString, out SessionAccessLevel parsedAccessLevel);
-                    if (isSessionAccessLevel)
-                    {
-                        sessionAccessLevel = parsedAccessLevel;
-                    }
+                    _ = userMessages.SendTextMessage($"Invalid access level \"{args[1]}\"");
+                    return;
                 }
 
-                // Get template by name
-                string templateName = string.Join(" ", args.Take(args.Length - (isSessionAccessLevel ? 1 : 0)));
-                templateName.Trim();
-
-                WorldStartupParameters startInfo = new WorldStartupParameters
-                {
-                    LoadWorldPresetName = templateName,
+                WorldStartupParameters startInfo = new() {
+                    LoadWorldPresetName = args[0],
                     AccessLevel = sessionAccessLevel,
                     HideFromPublicListing = HeadlessTweaks.DefaultSessionHidden.GetValue()
                 };
-                if ((await WorldPresets.GetPresets()).FirstOrDefault(p =>
-                    p.Name != null && p.Name.Equals(startInfo.LoadWorldPresetName, StringComparison.InvariantCultureIgnoreCase)) == null)
+                if (WorldPresets.Presets.FirstOrDefault(p => p.Name != null && p.Name.Equals(startInfo.LoadWorldPresetName, StringComparison.InvariantCultureIgnoreCase)) == null)
                 {
-                    _ = userMessages.SendTextMessage($"Invalid preset name '{startInfo.LoadWorldPresetName}'");
+                    _ = userMessages.SendTextMessage($"Unrecognized preset name \"{startInfo.LoadWorldPresetName}\"");
                     return;
                 }
-
-                var handler = GetCommandHandler();
-                if (handler == null)
-                {
-                    _ = userMessages.SendTextMessage("Error Handler Not Found :(");
-                    return;
-                }
-
-
-                var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
-                var confirmText = confirmMsg.ToLower();
-
-                if (confirmText == "y" || confirmText == "yes")
-                {
-                    var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
-
-                    if (nameRequest != null)
-                    {
-                        startInfo.SessionName = nameRequest;
-                    }
-                    else
-                    {
-                        _ = userMessages.SendTextMessage("No name entered, using default name");
-                    }
-                }
-
-
-
-
-
-
-                var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
-                await newWorld.Start();
-
-                // Error starting world 
-                if (newWorld.CurrentInstance == null)
-                {
-                    _ = userMessages.SendTextMessage("Error starting world");
-                    return;
-                }
-
-                newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
-                _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
-
+                await CommandWorldSetup(userMessages, startInfo);
             }
 
             // Start a world from the world roster
@@ -165,98 +105,39 @@ namespace HeadlessTweaks
                     _ = userMessages.SendTextMessage("Usage: /startWorld [world name] [?SessionAccessLevel]");
                     return;
                 }
-                string worldName = args[0];
 
-                
                 SessionAccessLevel sessionAccessLevel = HeadlessTweaks.DefaultSessionAccessLevel.GetValue();
-
-                if (args.Length > 1)
+                if (args.Length > 1 && !TryParseAccessLevel(args[1], out sessionAccessLevel))
                 {
-                    if (TryParseAccessLevel(args[1], out SessionAccessLevel parsedAccessLevel))
-                    {
-                        sessionAccessLevel = parsedAccessLevel;
-                    }
-                    else
-                    {
-                        _ = userMessages.SendTextMessage("Invalid access level, Defaulting to Private");
-                    }
+                    _ = userMessages.SendTextMessage($"Invalid access level \"{args[1]}\"");
+                    return;
                 }
 
                 var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
-                // Get world from world roster
-                // Key is the world name, value is the world url
-                if (!WorldRoster.ContainsKey(worldName))
-                    return;
+                if (!WorldRoster.TryGetValue(args[0], out string worldUrl)) return;
 
-                // Get world url
-                string worldUrl = WorldRoster[worldName];
-
-
-                WorldStartupParameters startInfo = new WorldStartupParameters
-                {
+                WorldStartupParameters startInfo = new() {
                     LoadWorldURL = worldUrl,
                     AccessLevel = sessionAccessLevel,
                     HideFromPublicListing = HeadlessTweaks.DefaultSessionHidden.GetValue()
                 };
 
-
-                // Get world handler
-                var handler = GetCommandHandler();
-                if (handler == null)
-                {
-                    _ = userMessages.SendTextMessage("Error Handler Not Found :(");
-                    return;
-                }
-
-                var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
-                var confirmText = confirmMsg.ToLower();
-
-                if (confirmText == "y" || confirmText == "yes")
-                {
-                    var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
-
-                    if (nameRequest != null)
-                    {
-                        startInfo.SessionName = nameRequest;
-                    }
-                    else
-                    {
-                        _ = userMessages.SendTextMessage("No name entered, using default name");
-                    }
-                }
-
-                // Message user that the world is starting
-                _ = userMessages.SendTextMessage("Starting world " + worldName);
-
-                // Start world
-                var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
-                await newWorld.Start();
-
-                // Error starting world 
-                if (newWorld.CurrentInstance == null)
-                {
-                    _ = userMessages.SendTextMessage("Error starting world " + worldName);
-                    return;
-                }
-
-                newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
-                _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
+                await CommandWorldSetup(userMessages, startInfo);
             }
 
             // List world templates
             // Usage: /worldTemplates
 
             [Command("worldTemplates", "List world templates", "World Management", PermissionLevel.Moderator)]
-            public static async Task WorldTemplates(UserMessages userMessages, Message msg, string[] args)
+            public static void WorldTemplates(UserMessages userMessages, Message msg, string[] args)
             {
-                var templates = await WorldPresets.GetPresets();
-
                 var messages = new BatchMessageHelper(userMessages);
                 messages.Add("World templates:");
-                foreach (var template in templates)
-                {
+
+                foreach (var template in WorldPresets.Presets) 
                     messages.Add(template.Name, true);
-                }
+
+
                 _ = messages.Send();
             }
 
@@ -270,64 +151,21 @@ namespace HeadlessTweaks
                     _ = userMessages.SendTextMessage("Usage: /startWorldUrl [record url] [?SessionAccessLevel]");
                     return;
                 }
-                string url = args[0];
 
                 SessionAccessLevel sessionAccessLevel = HeadlessTweaks.DefaultSessionAccessLevel.GetValue();
-
-                if (args.Length > 1)
+                if (args.Length > 1 && !TryParseAccessLevel(args[1], out sessionAccessLevel))
                 {
-                    if (TryParseAccessLevel(args[1], out SessionAccessLevel parsedAccessLevel))
-                    {
-                        sessionAccessLevel = parsedAccessLevel;
-                    }
-                    else
-                    {
-                        _ = userMessages.SendTextMessage("Invalid access level, Defaulting to Private");
-                    }
+                    _ = userMessages.SendTextMessage($"Invalid access level \"{args[1]}\"");
+                    return;
                 }
 
-                WorldStartupParameters startInfo = new WorldStartupParameters
+                WorldStartupParameters startInfo = new()
                 {
-                    LoadWorldURL = url,
+                    LoadWorldURL = args[0],
                     AccessLevel = sessionAccessLevel,
                     HideFromPublicListing = HeadlessTweaks.DefaultSessionHidden.GetValue()
                 };
-                var handler = GetCommandHandler();
-                if (handler == null)
-                {
-                    _ = userMessages.SendTextMessage("Error Handler Not Found :(");
-                    return;
-                }
-
-                var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
-                var confirmText = confirmMsg.ToLower();
-
-                if (confirmText == "y" || confirmText == "yes")
-                {
-                    var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
-
-                    if (nameRequest != null)
-                    {
-                        startInfo.SessionName = nameRequest;
-                    }
-                    else
-                    {
-                        _ = userMessages.SendTextMessage("No name entered, using default name");
-                    }
-                }
-
-                var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
-                await newWorld.Start();
-
-                // Error starting world 
-                if (newWorld.CurrentInstance == null)
-                {
-                    _ = userMessages.SendTextMessage("Error starting world");
-                    return;
-                }
-
-                newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
-                _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
+                await CommandWorldSetup(userMessages, startInfo);
             }
 
             // Start a world from a world orb
@@ -338,99 +176,56 @@ namespace HeadlessTweaks
                 // SessionAccessLevel is an emum
                 // parse the string to an enum value
                 SessionAccessLevel sessionAccessLevel = HeadlessTweaks.DefaultSessionAccessLevel.GetValue();
-
-                if (args.Length > 0)
+                if (args.Length > 1 && !TryParseAccessLevel(args[0], out sessionAccessLevel))
                 {
-                    if (TryParseAccessLevel(args[0], out SessionAccessLevel parsedAccessLevel))
-                    {
-                        sessionAccessLevel = parsedAccessLevel;
-                    }
-                    else
-                    {
-                        _ = userMessages.SendTextMessage("Invalid access level, Defaulting to Private");
-                    }
+                    _ = userMessages.SendTextMessage($"Invalid access level \"{args[0]}\"");
+                    return;
                 }
 
                 // ask the user to send a world orb
 
                 var record = await userMessages.RequestObjectMessage("Send a world orb");
-                if (record == null)
-                {
-                    _ = userMessages.SendTextMessage("No world orb sent");
-                    return;
-                }
-                var itemUri = record.AssetURI;
+                if (record == null) return;
 
-                _ = userMessages.SendTextMessage("Checking if object is a world orb, Spawning orb...");
+                _ = userMessages.SendTextMessage("Checking if object is a world orb...");
 
-                var worldUrl = await ExtractOrbUrl(userMessages, itemUri);
+                var worldUrl = await ExtractOrbUrl(userMessages, record.AssetURI);
                 if (worldUrl == null)
                     return;
 
-                _ = userMessages.SendTextMessage("Found world orb");
                 // Create the world
-                WorldStartupParameters startInfo = new WorldStartupParameters
+                WorldStartupParameters startInfo = new()
                 {
                     LoadWorldURL = worldUrl.ToString(),
                     AccessLevel = sessionAccessLevel,
                     HideFromPublicListing = HeadlessTweaks.DefaultSessionHidden.GetValue()
                 };
 
-                var handler = GetCommandHandler();
-                if (handler == null)
-                {
-                    _ = userMessages.SendTextMessage("Error Handler Not Found :(");
-                    return;
-                }
-
-                var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
-                var confirmText = confirmMsg.ToLower();
-
-                if (confirmText == "y" || confirmText == "yes")
-                {
-                    var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
-
-                    if (nameRequest != null)
-                    {
-                        startInfo.SessionName = nameRequest;
-                    }
-                    else
-                    {
-                        _ = userMessages.SendTextMessage("No name entered, using default name");
-                    }
-                }
-
-                _ = userMessages.SendTextMessage("Starting world...");
-                var newWorld = new NeosHeadless.WorldHandler(handler.Engine, handler.Config, startInfo);
-                await newWorld.Start();
-
-                // Check if world is started
-                if (newWorld.CurrentInstance == null)
-                {
-                    _ = userMessages.SendTextMessage("Error starting world");
-                    return;
-                }
-
-
-                newWorld.CurrentInstance.AllowUserToJoin(msg.SenderId);
-                _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GetSessionInfo());
+                await CommandWorldSetup(userMessages, startInfo);
             }
 
             // Set role for a user in a world
             // Target sender user's focused world if no world name is given
             // Usage: /role [user] [role name] [?world name...]
             [Command("role", "Set role for a user in a world", "World Management", PermissionLevel.Administrator, usage: "[user] [role name] [?world name...]")]
-            public static void Role(UserMessages userMessages, Message msg, string[] args)
+            public static async Task Role(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 2)
                 {
                     _ = userMessages.SendTextMessage("Usage: /role [user] [role name] [?world name...]");
                     return;
                 }
-                string userId = args[0];
-                string roleName = args[1];
 
-                string worldName = "";
+                string userArg = args[0];
+                string userId = await TryGetUserId(userArg);
+
+                if (userId == null)
+                {
+                    _ = userMessages.SendTextMessage($"User \"{userArg}\" not found");
+                    return;
+                }
+
+                string worldName = null;
                 if (args.Length > 2)
                 {
                     worldName = string.Join(" ", args.Skip(2));
@@ -438,21 +233,21 @@ namespace HeadlessTweaks
 
                 // Get the world
                 var world = GetWorldOrUserWorld(userMessages, worldName, userId, true);
-                if (world == null)
-                    return;
+                if (world == null) return;
 
                 var user = world.GetUserByUserId(userId);
                 if (user == null)
                 {
-                    _ = userMessages.SendTextMessage("User not found");
+                    _ = userMessages.SendTextMessage($"User \"{userArg}\" not found in world \"{world.Name}\"");
                     return;
                 }
 
+                string roleName = args[1];
                 var role = world.Permissions.Roles.FirstOrDefault(x => x.RoleName.Value.Equals(roleName, StringComparison.InvariantCultureIgnoreCase));
 
                 if (role == null)
                 {
-                    _ = userMessages.SendTextMessage($"Role {roleName} not found");
+                    _ = userMessages.SendTextMessage($"Role \"{roleName}\" not found");
                     return;
                 }
                 else if (role > world.HostUser.Role)
@@ -460,19 +255,20 @@ namespace HeadlessTweaks
                     _ = userMessages.SendTextMessage("Cannot assign role higher than host user");
                     return;
                 }
-                world.RunSynchronously(() =>
-                { // Datamodel moment :((())))))))
+
+                // Datamodel moment :((())))))))
+                await world.Coroutines.StartTask(async () => {
+                    await new ToWorld();
                     user.Role = role;
                     world.Permissions.AssignDefaultRole(user, role);
-
-                    _ = userMessages.SendTextMessage($"Set {user.UserName} to {role.RoleName}");
                 });
+                _ = userMessages.SendTextMessage($"Set user \"{user.UserName}\" to \"{role.RoleName}\"");
             }
 
             // Set own role
             // Usage: /roleSelf [role name] [?world name...]
             [Command("roleSelf", "Set own role", "World Management", PermissionLevel.Administrator, usage: "[role name] [?world name...]")]
-            public static void RoleSelf(UserMessages userMessages, Message msg, string[] args)
+            public static async Task RoleSelf(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
                 {
@@ -485,7 +281,7 @@ namespace HeadlessTweaks
                 newArgs.Insert(0, msg.SenderId);
 
                 // Call the set role command
-                Role(userMessages, msg, newArgs.ToArray());
+                await Role(userMessages, msg, newArgs.ToArray());
             }
 
             // Add a world to the world roster list
@@ -503,7 +299,7 @@ namespace HeadlessTweaks
                 }
 
                 string worldName = args[0];
-                string worldUrl = "";
+                string worldUrl = null;
                 if (args.Length > 1)
                 {
                     worldUrl = args[1];
@@ -517,15 +313,18 @@ namespace HeadlessTweaks
                     return;
                 }
 
-                if (worldUrl == "")
+                if (string.IsNullOrWhiteSpace(worldUrl))
                 {
                     // Ask the user to send a world orb
-                    var record = await userMessages.RequestObjectMessage("No uri provided, send a world orb");
+                    var recievedObject = await userMessages.RequestObjectMessage("No Uri provided, send a world orb");
+
+                    if (recievedObject == null) return;
 
                     // Check if the object is a world orb
-                    var worldUrlResult = await ExtractOrbUrl(userMessages, record.AssetURI);
-                    if (worldUrlResult == null)
-                        return;
+                    var worldUrlResult = await ExtractOrbUrl(userMessages, recievedObject.AssetURI);
+
+                    if (worldUrlResult == null) return;
+
                     worldUrl = worldUrlResult.ToString();
                 }
 
@@ -542,7 +341,7 @@ namespace HeadlessTweaks
                 // Save the world roster
                 HeadlessTweaks.WorldRoster.SetValueAndSave(WorldRoster);
 
-                _ = userMessages.SendTextMessage($"Added {worldName} to the world roster");
+                _ = userMessages.SendTextMessage($"Added \"{worldName}\" to the world roster");
             }
 
             // Remove a world from the world roster list
@@ -556,13 +355,13 @@ namespace HeadlessTweaks
                     return;
                 }
 
-                string worldName = args[0];
+                string worldName = string.Join(" ", args);
 
                 var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
                 // Check if world name is unique
                 if (!WorldRoster.ContainsKey(worldName))
                 {
-                    _ = userMessages.SendTextMessage($"{worldName} doesn't exist");
+                    _ = userMessages.SendTextMessage($"World \"{worldName}\" doesn't exist in the roster");
                     return;
                 }
 
@@ -572,7 +371,7 @@ namespace HeadlessTweaks
                 // Save the world roster
                 HeadlessTweaks.WorldRoster.SetValueAndSave(WorldRoster);
 
-                _ = userMessages.SendTextMessage($"Removed {worldName} from the world roster");
+                _ = userMessages.SendTextMessage($"Removed \"{worldName}\" from the world roster");
 
             }
 
@@ -589,39 +388,33 @@ namespace HeadlessTweaks
                 var messages = new BatchMessageHelper(userMessages);
                 messages.Add("World Roster:");
 
-                // iterate over all worlds and modulate the alpha channel of the color to make them more visible
                 foreach (var world in worlds)
-                {
                     messages.Add(world, true);
-                }
-
-                messages.Send();
+                
+                _ = messages.Send();
             }
 
             // List all worlds both in the world roster list and in the template list
             // Usage: /listWorlds
             [Command("listWorlds", "List all worlds in the world roster and in the world presets", "World Management", PermissionLevel.Moderator)]
-            public static async Task ListWorlds(UserMessages userMessages, Message msg, string[] args)
+            public static void ListWorlds(UserMessages userMessages, Message msg, string[] args)
             {
                 var WorldRoster = HeadlessTweaks.WorldRoster.GetValue();
-                var WorldTemplates = await WorldPresets.GetPresets();
 
                 var worlds = WorldRoster.Keys.ToList();
                 worlds.Sort();
 
                 var messages = new BatchMessageHelper(userMessages);
+
                 messages.Add("<b>World Roster:</b>");
                 foreach (var world in worlds)
-                {
                     messages.Add(world, true);
-                }
 
                 messages.Add("<b>World Templates:</b>");
-                foreach (var world in WorldTemplates)
-                {
+                foreach (var world in WorldPresets.Presets)
                     messages.Add(world.Name, true);
-                }
-                messages.Send();
+                
+                _ = messages.Send();
             }
 
             // Close world command
@@ -630,11 +423,11 @@ namespace HeadlessTweaks
             [Command("closeWorld", "Close a world", "World Management", PermissionLevel.Moderator, usage: "[?world name...]")]
             public static async Task CloseWorld(UserMessages userMessages, Message msg, string[] args)
             {
-                if (args.Length < 1)
+                /*if (args.Length < 1)
                 {
                     _ = userMessages.SendTextMessage("Usage: /closeWorld [?world name...]");
                     return;
-                }
+                }*/
                 // Get the world name from joining the args
 
                 var worldName = string.Join(" ", args);
@@ -645,9 +438,10 @@ namespace HeadlessTweaks
                     return;
 
                 // Wait for response from the user to confirm they want to close the world
-                var confirmMsg = await userMessages.RequestTextMessage("Are you sure you want to close this world? (y/n)", 32);
+                var confirmMsg = await userMessages.RequestTextMessage($"Are you sure you want to close the world \"{world.Name}\"? (y/n)", 32);
                 if (confirmMsg == null)
                 {
+                    _ = userMessages.SendTextMessage($"Not closing the world \"{world.Name}\"");
                     return;
                 }
                 var confirmText = confirmMsg.ToLower();
@@ -656,11 +450,11 @@ namespace HeadlessTweaks
                 {
                     // Close the world
                     world.Destroy();
-                    _ = userMessages.SendTextMessage("World closed");
+                    _ = userMessages.SendTextMessage($"World \"{world.Name}\" closed");
                 }
                 else
                 {
-                    _ = userMessages.SendTextMessage("World not closed");
+                    _ = userMessages.SendTextMessage($"Canceled, not closing world \"{world.Name}\"");
                 }
             }
 
@@ -677,7 +471,8 @@ namespace HeadlessTweaks
 
                 if (!TryParseAccessLevel(args[0], out SessionAccessLevel accessLevel))
                 {
-                    _ = userMessages.SendTextMessage("Invalid access level");
+                    _ = userMessages.SendTextMessage($"Invalid access level \"{args[0]}\"");
+                    return;
                 }
 
                 // Get the hidden flag
@@ -702,7 +497,7 @@ namespace HeadlessTweaks
                 if (hiddenParsed)
                     world.HideFromListing = hidden;
 
-                _ = userMessages.SendTextMessage($"Session access level set to {(hidden ? "Hidden, " : "")}{accessLevel} for {world.Name}");
+                _ = userMessages.SendTextMessage($"Session access level set to {(hidden ? "Hidden, " : null)}{accessLevel} for \"{world.Name}\"");
             }
 
             // set session name command
@@ -712,23 +507,20 @@ namespace HeadlessTweaks
             public static async Task SetSessionName(UserMessages userMessages, Message msg, string[] args)
             {
                 // Get the world name from joining the args
-                var worldName = string.Join(" ", args);
-                worldName.Trim();
+                var worldName = string.Join(" ", args).Trim();
 
                 // Get the users world or focused world
                 var world = GetWorldOrUserWorld(userMessages, worldName, msg.SenderId, false);
-                if (world == null)
-                    return;
+                if (world == null) return;
 
                 // Get the new name
                 var newName = await userMessages.RequestTextMessage("Enter the new name for the session");
-                if (newName == null)
-                    return;
+                if (newName == null) return;
 
                 // Set the name
                 world.Name = newName;
 
-                _ = userMessages.SendTextMessage($"Session name set to {newName}");
+                _ = userMessages.SendTextMessage($"Session name set to \"{newName}\"");
             }
         }
     }

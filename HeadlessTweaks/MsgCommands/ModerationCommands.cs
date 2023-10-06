@@ -1,7 +1,6 @@
 ﻿using System;
-using CloudX.Shared;
-
-using static CloudX.Shared.MessageManager;
+using System.Threading.Tasks;
+using SkyFrost.Base;
 
 namespace HeadlessTweaks
 {
@@ -16,30 +15,33 @@ namespace HeadlessTweaks
             // User can not set their own permission level
             // Target permission must be lower than or equal to your own
 
-            [Command("setPerm", "Sets a user's permission level", "Moderation", PermissionLevel.Moderator, usage: "[user id] [level]")]
-            public static void SetPerm(UserMessages userMessages, Message msg, string[] args)
+            [Command("setPerm", "Sets a user's permission level", "Moderation", PermissionLevel.Moderator, usage: "[user] [level]")]
+            public async static Task SetPerm(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 2)
                 {
-                    userMessages.SendTextMessage("Usage: /setperm [user id] [level]");
+                    _ = userMessages.SendTextMessage("Usage: /setperm [user] [level]");
                     return;
                 }
-                string userId = args[0];
+                string user = args[0];
                 string level = args[1];
+
+                string userId = await TryGetUserId(user);
+                if(userId == null)
+                {
+                    _ = userMessages.SendTextMessage($"Could not find user {user}");
+                    return;
+                }
+
 
                 if (userId == msg.SenderId)
                 {
-                    userMessages.SendTextMessage("You can not set your own permission level");
-                    return;
-                }
-                else if (!userId.ToLower().StartsWith("u-"))
-                {
-                    userMessages.SendTextMessage($"'{userId}' is not a valid user id");
+                    _ = userMessages.SendTextMessage("You can not set your own permission level");
                     return;
                 }
                 else if (GetUserPermissionLevel(userId) > GetUserPermissionLevel(msg.SenderId))
                 {
-                    userMessages.SendTextMessage("You can not set a user's permission level who is higher than you");
+                    _ = userMessages.SendTextMessage("You can not set a user's permission level who is higher than you");
                     return;
                 }
 
@@ -50,38 +52,38 @@ namespace HeadlessTweaks
                     // check if level is higher than your own
                     if (GetUserPermissionLevel(msg.SenderId) < levelEnum)
                     {
-                        userMessages.SendTextMessage("You can not set a user's permission level higher than yours");
+                        _ = userMessages.SendTextMessage("You can not set a user's permission level higher than yours");
                         return;
                     }
                     var levels = HeadlessTweaks.PermissionLevels.GetValue();
-                    levels[userId] = levelEnum;
+                    levels.Add(userId, levelEnum);
                     HeadlessTweaks.PermissionLevels.SetValueAndSave(levels);
 
-                    userMessages.SendTextMessage("Permission level set to " + levelEnum);
+                    _ = userMessages.SendTextMessage("Permission level set to " + levelEnum);
                 }
                 else
                 {
-                    userMessages.SendTextMessage("Invalid permission level");
+                    _ = userMessages.SendTextMessage($"Invalid permission level \"{level}\"");
                 }
             }
 
             // Get user permission level
             // Usage: /getPerm [?user id]
 
-            [Command("getPerm", "Get user permission level", "Moderation", PermissionLevel.Moderator, usage: "[?user id]")]
-            public static void GetPerm(UserMessages userMessages, Message msg, string[] args)
+            [Command("getPerm", "Get user permission level", "Moderation", PermissionLevel.Moderator, usage: "[?user]")]
+            public async static Task GetPerm(UserMessages userMessages, Message msg, string[] args)
             {
-                var userId = msg.SenderId;
+                string userId = msg.SenderId;
                 if (args.Length >= 1)
                 {
-                    userId = args[0];
-                    if (!userId.ToLower().StartsWith("u-"))
+                    userId = await TryGetUserId(args[0]);
+                    if (userId == null)
                     {
-                        userMessages.SendTextMessage($"'{userId}' is not a valid user id");
+                        _ = userMessages.SendTextMessage($"Could not find user \"{args[0]}\"");
                         return;
                     }
                 }
-                userMessages.SendTextMessage($"{userId} has a permission level of {GetUserPermissionLevel(userId)}");
+                _ = userMessages.SendTextMessage($"{userId} has a permission level of {GetUserPermissionLevel(userId)}");
             }
         }
     }

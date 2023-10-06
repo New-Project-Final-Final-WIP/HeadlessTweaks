@@ -3,10 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using FrooxEngine;
 using HarmonyLib;
-using BaseX;
+using Elements.Core;
 
-using static CloudX.Shared.MessageManager;
-using CloudX.Shared;
+
+using SkyFrost.Base;
 using System;
 
 namespace HeadlessTweaks
@@ -23,27 +23,48 @@ namespace HeadlessTweaks
             return HeadlessTweaks.PermissionLevels.GetValue().FirstOrDefault(x => x.Key == userId).Value;
         }
 
+        public async static Task<string> TryGetUserId(string value, bool allowAnyUserId = true, bool onlyLookupContacts = false) {
+            if (allowAnyUserId && IdUtil.GetOwnerType(value.ToUpper()) == OwnerType.User) return value;
+
+            var contact = Engine.Current.Cloud.Contacts.FindContact((Contact f) => f.ContactUsername.Equals(value, StringComparison.InvariantCultureIgnoreCase));
+            
+            if (contact != null)
+                return contact.ContactUserId;
+
+            if (onlyLookupContacts) return null;
+
+            var user = await Engine.Current.Cloud.Users.GetUserByName(value);
+            if (user.IsOK)
+                return user.Entity.Id;
+
+            return null;
+        }
 
         public static bool TryParseAccessLevel(string value, out SessionAccessLevel parsedLevel)
         {
-            value.Trim();
-            // Contacts to friends
-            if (value.ToLower() == "contacts")
+            // friends to contacts
+            switch (value.Trim().ToLower())
             {
-                value = "Friends";
+                case "friends":
+                    value = "Contacts";
+                    break;
+                case "contacts+":
+                case "friends+":
+                case "friendsplus":
+                case "friendsoffriends":
+                case "contactsofcontacts":
+                    value = "ContactsPlus";
+                    break;
             }
-            if (value.ToLower() == "contacts+")
-            {
-                value = "FriendsOfFriends";
-            }
+
             return Enum.TryParse(value, true, out parsedLevel);
         }
         
 
         private static bool CanUserJoin(World world, string userId)
         {
-            bool isContact = Engine.Current.Cloud.Friends.IsFriend(userId);
-            bool isContactsOrAbove = world.AccessLevel >= SessionAccessLevel.Friends;
+            bool isContact = Engine.Current.Cloud.Contacts.IsContact(userId);
+            bool isContactsOrAbove = world.AccessLevel >= SessionAccessLevel.Contacts;
             return GetUserPermissionLevel(userId) > PermissionLevel.None || world.IsUserAllowed(userId) || (isContact && isContactsOrAbove);
         }
 
@@ -101,77 +122,116 @@ namespace HeadlessTweaks
         }
 
 
+        private static async Task<World> CommandWorldSetup(UserMessages userMessages, WorldStartupParameters startInfo)
+        {
+
+            var handler = GetCommandHandler();
+            if (handler == null)
+            {
+                _ = userMessages.SendTextMessage("Error Handler Not Found :(");
+                return null;
+            }
+
+            var confirmMsg = await userMessages.RequestTextMessage("Do you want to name this session? (y/n)", 32);
+            var confirmText = confirmMsg.ToLower();
+
+            if (confirmText == "y" || confirmText == "yes")
+            {
+                var nameRequest = await userMessages.RequestTextMessage("Send name:", 45);
+
+                if (nameRequest != null)
+                {
+                    startInfo.SessionName = nameRequest;
+                }
+                else
+                {
+                    _ = userMessages.SendTextMessage("No was name entered, using the world's default name");
+                }
+            }
+
+            _ = userMessages.SendTextMessage($"Starting world \"{startInfo.SessionName}\"");
+
+            var newWorld = new FrooxEngine.Headless.WorldHandler(handler.Engine, handler.Config, startInfo);
+            try
+            {
+                await newWorld.Start();
+            }
+            catch (Exception ex)
+            {
+                HeadlessTweaks.Error($"Error starting world {startInfo.SessionName}:\n\t{ex}");
+            }
+
+            // Error starting world 
+            if (newWorld.CurrentInstance == null)
+            {
+                _ = userMessages.SendTextMessage($"Problem starting world \"{startInfo.SessionName}\"");
+                return null;
+            }
+
+            newWorld.CurrentInstance.AllowUserToJoin(userMessages.UserId);
+            _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GenerateSessionInfo());
+            return newWorld.CurrentInstance;
+        }
+
+
         // Get world url from object uri
 
         private static async Task<Uri> ExtractOrbUrl(UserMessages userMessages, string objectUri)
         {
-            //var tcs = new TaskCompletionSource<Message>();
+            var world = Userspace.UserspaceWorld;
 
             Uri url = null;
-            var w = Userspace.UserspaceWorld;
-            await w.Coroutines.StartTask(async () =>
+            await world.Coroutines.StartTask(async () =>
             {
-                Slot slot;
                 await new NextUpdate();
-                slot = w.RootSlot.AddSlot("SpawnedItem");
+                Slot slot = world.RootSlot.AddSlot("SpawnedItem");
                 await slot.LoadObjectAsync(new Uri(objectUri));
+                slot = slot.UnpackInventoryItem(true);
 
                 var orb = slot.GetComponentInChildren<WorldOrb>();
-                if (orb == null)
+                if (orb == null || orb.URL == null)
                 {
-                    _ = userMessages.SendTextMessage("Not a world orb");
+                    string error = "Sent orb does not have a world url";
+
+                    if (orb == null) error = $"Object \"{slot.Name}\" is not a world orb";
+
+                    _ = userMessages.SendTextMessage(error);
+                    slot.Destroy();
                     return;
                 }
-                Uri worldUrl = orb.URL;
-                if (worldUrl == null)
-                {
-                    _ = userMessages.SendTextMessage("No world url");
-                    return;
-                }
-                url = worldUrl;
+
+                Uri url = orb.URL;
+
+                _ = userMessages.SendTextMessage($"Found world \"{slot.Name}\" from sent orb");
                 slot.Destroy();
             });
+
             return url;
         }
 
 
-
-        // A static getter for a HarmonyLib.Traverse instance that caches the Traverse instance on first use and returns the same instance on subsequent uses.  
-        // This is useful for getting a Traverse instance that can be used on multiple threads.
-
-        private static NeosHeadless.CommandHandler GetCommandHandler()
+        private static FrooxEngine.Headless.CommandHandler GetCommandHandler()
         {
-            if (_commandHandler == null)
-            {
-                _commandHandler = Traverse.CreateWithType("NeosHeadless.Program")?
-                    .Field<NeosHeadless.CommandHandler>("commandHandler")?
-                    .Value;
-            }
+            _commandHandler ??= Traverse.CreateWithType("FrooxEngine.Headless.Program")?
+                    .Field<FrooxEngine.Headless.CommandHandler>("commandHandler")?.Value;
             return _commandHandler;
         }
-        private static NeosHeadless.CommandHandler _commandHandler = null;
+        private static FrooxEngine.Headless.CommandHandler _commandHandler = null;
 
         // Command delegate type for the command handler
         //(UserMessages userMessages, Message msg, string[] args)
-        public delegate void CommandDelegate(UserMessages userMessages, Message msg, string[] args);
+        public delegate void MessageCommandAction(UserMessages userMessages, Message msg, string[] args);
 
-        class BatchMessageHelper
+        class BatchMessageHelper(UserMessages userMessages, string prefix = null)
         {
-            public UserMessages UserMessages { get; private set; }
+            public UserMessages UserMessages { get; private set; } = userMessages;
             // list of messages to send
-            public List<string> Messages { get; private set; }
+            public List<string> Messages { get; private set; } = new List<string>();
 
-            public string Prefix { get; private set; }
+            public string Prefix { get; private set; } = prefix;
 
             bool _alphaMod = false;
 
-            // constructor
-            public BatchMessageHelper(UserMessages userMessages, string prefix = null)
-            {
-                UserMessages = userMessages;
-                Messages = new List<string>();
-                Prefix = prefix;
-            }
             // add a message to the list
             public void Add(string message, bool modulateAlpha = false, bool forceNewMessage = false)
             {
@@ -191,18 +251,17 @@ namespace HeadlessTweaks
                 if (!forceNewMessage && Messages.Count != 0 && Messages.Last().Length + message.Length < 512)
                 {
                     Messages[Messages.Count - 1] += "\n" + message;
+                    return;
                 }
-                else
-                {
-                    Messages.Add(Prefix + message);
-                }
+                Messages.Add(Prefix + message);
             }
 
             // add message colr
-            public void Add(string message, color color, bool modulateAlpha = false)
+            public void Add(string message, colorX color, bool modulateAlpha = false)
             {
-                var newMessage = string.Format("<color={0}>{1}</color>", color.ToHexString(color.a != 1f), message);  // "<color=" + color.ToHexString(color.a != 1f) + ">" + message + "</color>";
-                Add(newMessage, modulateAlpha);
+                if(color != RadiantUI_Constants.TEXT_COLOR)
+                    message = string.Format("<color={0}>{1}</color>", color.ToHexString(color.a != 1f), message);
+                Add(message, modulateAlpha);
             }
             
             // add message alpha
@@ -221,9 +280,7 @@ namespace HeadlessTweaks
             public async Task Send()
             {
                 foreach (var message in Messages)
-                {
                     await UserMessages.SendTextMessage(message);
-                }
             }
         }
     }

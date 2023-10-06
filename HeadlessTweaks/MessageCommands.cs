@@ -5,23 +5,22 @@ using System.Reflection;
 using System.Threading.Tasks;
 using FrooxEngine;
 using HarmonyLib;
-using CloudX.Shared;
-using BaseX;
+using SkyFrost.Base;
+using Elements.Core;
 
-using static CloudX.Shared.MessageManager;
-using static NeosModLoader.NeosMod;
+using static ResoniteModLoader.ResoniteMod;
 
 namespace HeadlessTweaks
 {
     public partial class MessageCommands
     {
         // Dictionary of command names and their methods
-        private static readonly Dictionary<string, MethodInfo> commands = new Dictionary<string, MethodInfo>();
+        private static readonly Dictionary<string, MethodInfo> commands = new();
 
         // Dictionary of UserMessages and TaskCompletionSource of Message
-        public static readonly Dictionary<UserMessages, TaskCompletionSource<Message>> responseTasks = new Dictionary<UserMessages, TaskCompletionSource<Message>>();
+        public static readonly Dictionary<UserMessages, TaskCompletionSource<Message>> responseTasks = new();
 
-        internal static void Init(Harmony harmony)
+        internal static void Init()
         {
             // Fetch all the methods that are marked with the Command attribute in the Commands class
             // Store them in a dictionay with the lowercase command name as the key
@@ -43,12 +42,6 @@ namespace HeadlessTweaks
                 }
             }
 
-            var target = typeof(WorldStartSettingsExtensions).GetMethod("SetWorldParameters");
-            var prefix = typeof(MessageCommands).GetMethod("Prefix");
-            var postfix = typeof(MessageCommands).GetMethod("Postfix");
-
-            harmony.Patch(target, prefix: new HarmonyMethod(prefix), postfix: new HarmonyMethod(postfix));
-
             Engine.Current.RunPostInit(HookIntoMessages);
         }
 
@@ -60,15 +53,22 @@ namespace HeadlessTweaks
         private static async void OnMessageReceived(Message msg)
         {
             if (Engine.Current.Cloud.HubClient == null) return;
- 
-            // Mark message as read
-            await Engine.Current.Cloud.HubClient.MarkMessagesRead(new MarkReadBatch()
-            {
-                SenderId = Engine.Current.Cloud.Messages.SendReadNotification ? msg.SenderId : null,
-                Ids = new List<string> { msg.Id },
-                ReadTime = DateTime.UtcNow
-            });
 
+            // Mark message as read
+            try
+            {
+                await Engine.Current.Cloud.HubClient.MarkMessagesRead(new MarkReadBatch()
+                {
+                    SenderId = Engine.Current.Cloud.Messages.SendReadNotification ? msg.SenderId : null,
+                    Ids = new List<string> { msg.Id },
+                    ReadTime = DateTime.UtcNow
+                });
+            } catch (Exception ex)
+            {
+                // Ran into an error at one point, keeping this here to log more information if it shows again
+                Error($"Marking a message has cause an error!\n\tMessage: {msg}, Content: {msg.Content}\n\tException: {ex}");
+                return;
+            }
 
             var userMessages = GetUserMessages(msg.SenderId);
             // check if userMessages is in the response tasks dictionary
@@ -83,13 +83,13 @@ namespace HeadlessTweaks
             }
             switch (msg.MessageType)
             {
-                case CloudX.Shared.MessageType.Text:
+                case SkyFrost.Base.MessageType.Text:
                     if (msg.Content.StartsWith("/"))
                     {
-                        var args = msg.Content.Split(' ');
+                        var args = StringHelper.ParseArguments(msg.Content);
                         var cmd = args[0].Substring(1).ToLower();
                         var cmdArgs = args.Skip(1).ToArray();
-
+                        
 
                         var cmdMethod = commands.ContainsKey(cmd) ? commands[cmd] : null;
 
@@ -97,19 +97,18 @@ namespace HeadlessTweaks
                         // Check if user has permission to use command
                         // CommandAttribute.PermissionLevel
                         var cmdAttr = cmdMethod?.GetCustomAttribute<CommandAttribute>();
-                        if (cmdAttr == null) return;
 
+                        if (cmdMethod == null || cmdAttr == null)
+                        {
+                            _ = userMessages.SendTextMessage("Unknown command");
+                            return;
+                        }
                         if (cmdAttr.PermissionLevel > GetUserPermissionLevel(msg.SenderId))
                         {
                             _ = userMessages.SendTextMessage("You do not have permission to use that command.");
                             return;
                         }
 
-                        if (cmdMethod == null)
-                        {
-                            _ = userMessages.SendTextMessage("Unknown command");
-                            return;
-                        }
                         Msg("Executing command: " + cmd);
                         // Try to execute command and send error message if it fails
                         
@@ -126,14 +125,12 @@ namespace HeadlessTweaks
                             }
                             else
                             {
-                                var cmdDelegate = (CommandDelegate)Delegate.CreateDelegate(typeof(CommandDelegate), cmdMethod);
+                                var cmdDelegate = (MessageCommandAction)Delegate.CreateDelegate(typeof(MessageCommandAction), cmdMethod);
                                 cmdDelegate(userMessages, msg, cmdArgs);
                             }
                         }
                         catch (Exception e)
                         {
-                            Msg("whatHuh");
-                            // HeadlessTweaks.Error failed to execute user's command and send error message
                             Error($"Failed to execute command from {msg.SenderId}: " + cmd, e);
                             _ = userMessages.SendTextMessage("Error: " + e.Message);
                         }
@@ -143,63 +140,6 @@ namespace HeadlessTweaks
                     return;
             }
         }
-        // TODO Transpile this instead
-        public static void Prefix(WorldStartupParameters info, out List<string> __state)
-        {
-            if (info.AutoInviteUsernames == null)
-            {
-                __state = null;
-                return;
-            }
-            __state = new List<string>(info.AutoInviteUsernames);
-            info.AutoInviteUsernames.Clear();
-        }
-        public static void Postfix(WorldStartupParameters info, List<string> __state, World world, Task __result)
-        {
-            //AutoInviteOptOut
-            if (__state == null || __state.Count <= 0)
-                return;
-            if (world.Engine.Cloud.CurrentUser == null)
-            {
-                UniLog.Log("Not logged in, cannot send auto-invites!");
-                return;
-            }
 
-            world.Coroutines.StartTask(async delegate 
-            {
-                /* The hubris of programmers can be a cause of their downfall, especially when dealing with complex systems.
-                 * This act of laziness can lead to a cascade of issues that can exacerbate the original problem and make it difficult to resolve.
-                 * Despite this, some programmers settle with a different bad solution that works and is bad, rather than seeking help or taking the time to transpile a method.
-                 * It takes humility and discipline to do things properly and avoid taking shortcuts that can lead to long-term negative consequences. 
-                 * That humility is not mine.
-                */
-                await __result; // ;-;
-                info.AutoInviteUsernames.AddRange(__state);
-
-                foreach (string username in __state)
-                {
-                    Friend friend = world.Engine.Cloud.Friends.FindFriend(f =>
-                        f.FriendUsername.Equals(username, StringComparison.InvariantCultureIgnoreCase));
-
-                    if (friend == null)
-                    {
-                        UniLog.Log(username + " is not in the friends list, cannot auto-invite", false);
-                    }
-                    else
-                    {
-                        if (HeadlessTweaks.AutoInviteOptOut.GetValue().Contains(friend.FriendUserId)) continue;
-
-                        UserMessages messages = world.Engine.Cloud.Messages.GetUserMessages(friend.FriendUserId);
-                        if (!string.IsNullOrWhiteSpace(info.AutoInviteMessage))
-                        {
-                            await messages.SendTextMessage(info.AutoInviteMessage);
-                        }
-                        world.AllowUserToJoin(friend.FriendUserId);
-                        await messages.SendMessage(messages.CreateInviteMessage(world));
-                        UniLog.Log(username + " invited.");
-                    }
-                }
-            });
-        }
     }
 }

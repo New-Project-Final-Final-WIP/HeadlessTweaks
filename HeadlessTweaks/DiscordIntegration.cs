@@ -38,14 +38,14 @@ namespace HeadlessTweaks
                     avatarUrl = Engine.Current.Cloud?.CurrentUser?.Profile?.IconUrl;
                 }
 
-                Uri uri = CloudX.Shared.CloudXInterface.TryFromString(avatarUrl);
-                if (uri == null)
-                { // if the avatarUrl is not a valid url, use the default avatarUrl
-                    uri = NeosAssets.Graphics.Thumbnails.AnonymousHeadset;
-                }
-                if (CloudX.Shared.CloudXInterface.IsValidNeosDBUri(uri))
+                Uri.TryCreate(avatarUrl, UriKind.Absolute, out Uri uri);
+
+                if(uri == null) uri = OfficialAssets.Graphics.Thumbnails.AnonymousHeadset;
+                
+
+                if (Engine.Current.Cloud.Assets.IsValidDBUri(uri))
                 { // Convert from NeosDB to Https if needed
-                    uri = CloudX.Shared.CloudXInterface.NeosDBToHttp(uri, CloudX.Shared.NeosDB_Endpoint.CDN);
+                    uri = Engine.Current.Cloud.Assets.DBToHttp(uri, SkyFrost.Base.DB_Endpoint.Default);
                 }
                 avatarUrl = uri.ToString();
                 return avatarUrl;
@@ -145,12 +145,12 @@ namespace HeadlessTweaks
                 }
                 catch (Exception e)
                 {
-                    NeosModLoader.NeosMod.Error(e.ToString());
+                    ResoniteModLoader.ResoniteMod.Error(e.ToString());
                 }
             }
 
 
-            public static void SendEmbed(string message, BaseX.color color)
+            public static void SendEmbed(string message, Elements.Core.colorX color)
             {
                 SendEmbed(message, new Color(color.r, color.g, color.b));
             }
@@ -158,7 +158,7 @@ namespace HeadlessTweaks
             
             public static async void SendEmbed(string message, Color color)
             {
-                List<Embed> embedList = new List<Embed>();
+                List<Embed> embedList = new();
                 var embed = new EmbedBuilder
                 {
                     Description = message,
@@ -171,7 +171,7 @@ namespace HeadlessTweaks
                 }
                 catch (Exception e)
                 {
-                    NeosModLoader.NeosMod.Error(e.ToString());
+                    ResoniteModLoader.ResoniteMod.Error(e.ToString());
                 }
             }
             public static void SendStartEmbed(Engine engine, string action, Color color)
@@ -202,34 +202,33 @@ namespace HeadlessTweaks
                     SessionName = mappings[user.World.SessionId];
                 }
                 
-                List<Embed> embedList = new List<Embed>();
+                List<Embed> embedList = new();
                 var embed = new EmbedBuilder
                 {
                     // Embed property can be set within object initializer
                     Description = string.Format("{2} {0} [{1}]", SessionName, user.World.HostUser.UserName, action),
                     Color = color
                 };
-                CloudX.Shared.User cloudUser = (await user.Cloud.GetUser(userId).ConfigureAwait(false))?.Entity;
-                CloudX.Shared.UserProfile profile = cloudUser?.Profile;
+                SkyFrost.Base.User cloudUser = (await user.Cloud.Users.GetUser(userId).ConfigureAwait(false))?.Entity;
+                SkyFrost.Base.UserProfile profile = cloudUser?.Profile;
 
 
-                Uri userIconUri = CloudX.Shared.CloudXInterface.TryFromString(profile?.IconUrl);
+                Uri.TryCreate(profile?.IconUrl, UriKind.Absolute, out Uri userIconUri);
                 if (userIconUri == null)
                 {
-                    userIconUri = NeosAssets.Graphics.Thumbnails.AnonymousHeadset;
+                    userIconUri = OfficialAssets.Graphics.Thumbnails.AnonymousHeadset;
                 }
 
 
                 string userIcon = null;// = cloudUser?.Profile?.IconUrl;
                 // if(userIcon!=null)
-                if (userIconUri != null && CloudX.Shared.CloudXInterface.IsValidNeosDBUri(userIconUri)) // a
-                {
-                    userIcon = CloudX.Shared.CloudXInterface.NeosDBToHttp(userIconUri, CloudX.Shared.NeosDB_Endpoint.CDN).AbsoluteUri;
+                if (userIconUri != null && user.Cloud.Assets.IsValidDBUri(userIconUri))
+                { // Convert from NeosDB to Https if needed
+                    userIcon = user.Cloud.Assets.DBToHttp(userIconUri, SkyFrost.Base.DB_Endpoint.Default).AbsoluteUri;
                 }
 
-
                 string userUri = null;
-                if (!string.IsNullOrWhiteSpace(userId)) userUri = CloudX.Shared.CloudXInterface.NEOS_API + "/api/users/" + userId;
+                if (!string.IsNullOrWhiteSpace(userId)) userUri = user.Cloud.ApiEndpoint + "/api/users/" + userId;
 
                 embed.WithAuthor(name: userName, iconUrl: userIcon, url: userUri);
                 //embed.WithCurrentTimestamp();
@@ -241,7 +240,7 @@ namespace HeadlessTweaks
                 }
                 catch (Exception e)
                 {
-                    NeosModLoader.NeosMod.Error(e.ToString());
+                    HeadlessTweaks.Error(e.ToString());
                 }
             }
         }

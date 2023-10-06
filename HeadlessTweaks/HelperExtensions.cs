@@ -2,65 +2,79 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FrooxEngine;
-using CloudX.Shared;
-using BaseX;
-using NeosModLoader;
+using SkyFrost.Base;
+using Elements.Core;
+using ResoniteModLoader;
 using System.Timers;
 
-using static CloudX.Shared.MessageManager;
 namespace HeadlessTweaks
 {
     public static class HelperExtensions
     {
         //  Extend MessageManager.UserMessages with SendTextMessage(string, color)
-        public static async Task SendTextMessage(this UserMessages um, string text, color color)
+        public static async Task SendTextMessage(this UserMessages um, string text, colorX color)
         {
-            string message = "<color=" + color.ToHexString(color.a != 1f) + ">" + text + "</color>";
+            string message = text;
+            if (color != RadiantUI_Constants.TEXT_COLOR)
+                 message = "<color=" + color.ToHexString(color.a != 1f) + ">" + text + "</color>";
             await um.SendTextMessage(message);
         }
 
         //  Extend MessageManager.UserMessages with SendObjectMessage(slot)
-        public static async Task<bool> SendObjectMessage(this UserMessages um, Slot slot, Uri thumbnail = null, bool cleanUpSlot = true)
+        public static async Task<bool> SendObjectMessage(this UserMessages userMessages, Slot slot, Uri thumbnail = null, bool cleanUpSlot = true)
         {
-            if (thumbnail == null) thumbnail = new Uri("neosdb:///141d9d5bf3041474d7dab6f09a7cd8e0fb6b480a750d1e3fd03549e3ba685d11.png");
+            if (thumbnail == null) thumbnail = OfficialAssets.Graphics.Icons.Dash.Folder;
+
+            
 
             List<IItemThumbnailSource> componentsInChildren = slot.GetComponentsInChildren<IItemThumbnailSource>(
                 s => s.HasThumbnail && s.Slot.IsActive, true);
             // Log if a component is found
-            HeadlessTweaks.Msg("Found " + componentsInChildren.Count + " components in children of " + slot.Name);
-
+            //HeadlessTweaks.Msg("Found " + componentsInChildren.Count + " components in children of " + slot.Name);
 
             StaticTexture2D asset = null;
             if (componentsInChildren.Count == 0)
             {
-                slot.RunSynchronously(() =>
+                HeadlessTweaks.Msg($"No thumbnail found in slot {slot.Name}, attaching thumbnail");
+                bool loaded = false;
+                await slot.World.Coroutines.StartTask(async () =>
                 {
-                    HeadlessTweaks.Msg("No thumbnail found in slot " + slot.Name);
+                    await new ToWorld(); /// TODO: Check if ToWorld is needed here
 
                     asset = slot.World.AssetsSlot.AddSlot(slot.Name + "Thumbnail").AttachTexture(thumbnail);
                     var a = slot.AttachComponent<ItemTextureThumbnailSource>();
                     a.Texture.Target = asset;
+
+                    await new NextUpdate();
+                    await new NextUpdate(); /// TODO: Check if this 2nd one is needed
+
+                    loaded = await asset.Asset.WaitForLoad();//Task.Delay(200);
                 });
-                // Delay to allow the thumbnail to be loaded
-                HeadlessTweaks.Msg("Delaying to allow thumbnail to be loaded");
-                await Task.Delay(200);
+
+                if (!loaded)
+                {
+                    HeadlessTweaks.Warn("Thumbnail failed to load, canceling as headlesses can't render thumbnails");
+                    await userMessages.SendTextMessage("Thumbnail failed to load, canceling as headlesses can't render thumbnails");
+                    return false;
+                }
+                //HeadlessTweaks.Msg("Thumbnail Loaded");
             }
-
-
-
+/*
             HeadlessTweaks.Msg("Sending object message...");
-            var msgData = await um.CreateObjectMessage(slot, true);
-            HeadlessTweaks.Msg("Object message created?:" + msgData);
+            HeadlessTweaks.Msg($"Slot Exists: {slot != null}");
+            HeadlessTweaks.Msg($"UserMessages Exists: {userMessages != null}");*/
+            var msgData = await userMessages.CreateObjectMessage(slot, true);
+            //HeadlessTweaks.Msg("Object message created?:" + msgData);
             await msgData.uploadTask;
-            HeadlessTweaks.Msg("Object message uploaded?");
-            var success = await um.SendMessage(msgData.message);
+            //HeadlessTweaks.Msg("Object message uploaded?");
+            var success = await userMessages.SendMessage(msgData.message);
 
             if (cleanUpSlot)
             {
                 slot.RunSynchronously(() =>
                 {
                     slot.Destroy();
-                    if (asset != null) asset.Slot.Destroy();
+                    asset?.Slot.Destroy();
                 });
             }
             return success;
@@ -80,19 +94,13 @@ namespace HeadlessTweaks
             else
             {
                 FrooxEngine.Record correspondingRecord = world.CorrespondingRecord;
-                orb.URL = correspondingRecord?.URL;
+                orb.URL = correspondingRecord?.GetUrl(Engine.Current.PlatformProfile);
             }
             orb.WorldName = world.Name;
+            //world.HostUser.ThumbnailUrl
             var thumbnailData = Userspace.GetThumbnailData(world);
-            string thumbnail = null;
-            if (thumbnailData != null)
-            {
-                ThumbnailInfo publicThumbnail = thumbnailData.PublicThumbnail;
-                thumbnail = publicThumbnail?.Id;
-            }
-            if (thumbnail != null)
-            {
-                orb.ThumbnailTexURL = CloudXInterface.NeosThumbnailIdToHttp(thumbnail);
+            if (thumbnailData != null && thumbnailData.PublicThumbnail != null) {
+                orb.ThumbnailTexURL = Engine.Current.Cloud.Assets.ThumbnailToHttp(thumbnailData.PublicThumbnail);
             }
             HeadlessTweaks.Msg("Orb created");
             return root;
@@ -133,7 +141,7 @@ namespace HeadlessTweaks
                     }
 
                     // Send the user a message to let them know the response has timed out
-                    _ = userMessages.SendTextMessage("Response timed out", color.Red);
+                    _ = userMessages.SendTextMessage("Response timed out", RadiantUI_Constants.Hero.RED);
 
                     // cancel the task
                     tcs.TrySetResult(null);
@@ -161,7 +169,7 @@ namespace HeadlessTweaks
                 return null;
 
             // Check if response type is an item
-            if (response.MessageType != CloudX.Shared.MessageType.Object)
+            if (response.MessageType != SkyFrost.Base.MessageType.Object)
             {
                 _ = userMessages.SendTextMessage("Invalid response");
                 return null;
@@ -180,13 +188,39 @@ namespace HeadlessTweaks
                 return null;
 
             // Check if response type is an item
-            if (response.MessageType != CloudX.Shared.MessageType.Text)
+            if (response.MessageType != SkyFrost.Base.MessageType.Text)
             {
                 _ = userMessages.SendTextMessage("Invalid response");
                 return null;
             }
             // Extract the record from the message
             return response.Content;
-        }        
+        }
+
+
+        public static Contact ToContact(this SkyFrost.Base.User user) => new()
+        {
+            ContactUsername = user.Username,
+            AlternateUsernames = user.AlternateNormalizedNames,
+            ContactUserId = user.Id,
+            ContactStatus = ContactStatus.SearchResult,
+            Profile = user.Profile
+        };
+
+
+        public static async Task<bool> WaitForLoad(this IAsset asset)
+        {
+            if (asset == null)
+                return false;
+
+            while (true)
+            {
+                if (asset == null || asset.LoadState == AssetLoadState.Failed) return false;
+
+                if (asset.LoadState == AssetLoadState.FullyLoaded) return true;
+
+                await Task.Delay(100);
+            }
+        }
     }
 }

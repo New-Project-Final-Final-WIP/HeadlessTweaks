@@ -1,9 +1,8 @@
 ﻿using FrooxEngine;
 using System.Linq;
-using CloudX.Shared;
+using SkyFrost.Base;
 using System.Reflection;
-
-using static CloudX.Shared.MessageManager;
+using System.Threading.Tasks;
 
 namespace HeadlessTweaks
 {
@@ -62,7 +61,7 @@ namespace HeadlessTweaks
                             messages.Add($"/{alias}", true);
                         }
                     }
-                    messages.Send();
+                    _ = messages.Send();
                     return;
                 }
 
@@ -100,7 +99,7 @@ namespace HeadlessTweaks
                     }
                 }
                 
-                messages.Send();
+                _ = messages.Send();
             }
 
             // Toggle Opt out of auto-invites
@@ -109,19 +108,18 @@ namespace HeadlessTweaks
             [Command("optOut", "Toggles opt out of auto-invites", "Common")]
             public static void OptOut(UserMessages userMessages, Message msg, string[] args)
             {
-                var optOut = HeadlessTweaks.config.GetValue(HeadlessTweaks.AutoInviteOptOut);
+                var optOut = HeadlessTweaks.AutoInviteOptOutList.GetValue();
                 if (optOut.Contains(msg.SenderId))
                 {
                     optOut.Remove(msg.SenderId);
-                    _ = userMessages.SendTextMessage("Opted in to auto-invites");
+                    _ = userMessages.SendTextMessage("Opted into auto-invites");
                 }
                 else
                 {
                     optOut.Add(msg.SenderId);
                     _ = userMessages.SendTextMessage("Opted out of auto-invites");
                 }
-                HeadlessTweaks.config.Set(HeadlessTweaks.AutoInviteOptOut, optOut);
-                HeadlessTweaks.config.Save();
+                HeadlessTweaks.AutoInviteOptOutList.SetValueAndSave(optOut);
             }
 
             // Mark all as read
@@ -146,8 +144,9 @@ namespace HeadlessTweaks
                     goto Invite;
 
                 }
-                string worldName = string.Join(" ", args);
-                worldName.Trim();
+
+                string worldName = string.Join(" ", args).Trim();
+
                 var worlds = Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld);
 
                 world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
@@ -158,14 +157,14 @@ namespace HeadlessTweaks
                         var worldList = worlds.ToList();
                         if (result < 0 || result >= worldList.Count)
                         {
-                            _ = userMessages.SendTextMessage("World index out of range");
+                            _ = userMessages.SendTextMessage($"World index {result} out of range");
                             return;
                         }
                         world = worldList[result];
                     }
                     else
                     {
-                        _ = userMessages.SendTextMessage("No world found with the name " + worldName);
+                        _ = userMessages.SendTextMessage($"No world found with the name \"{world.Name}\"");
                         return;
                     }
                 }
@@ -174,11 +173,11 @@ namespace HeadlessTweaks
                 // check if user can join world
                 if (!CanUserJoin(world, msg.SenderId))
                 {
-                    _ = userMessages.SendTextMessage("You can't join " + world.Name);
+                    _ = userMessages.SendTextMessage($"You can't join world \"{world.Name}\"");
                     return;
                 }
                 world.AllowUserToJoin(msg.SenderId);
-                _ = userMessages.SendInviteMessage(world.GetSessionInfo());
+                _ = userMessages.SendInviteMessage(world.GenerateSessionInfo());
             }
 
             // Get session orb
@@ -195,16 +194,15 @@ namespace HeadlessTweaks
                 // check if user can join world
                 if (!CanUserJoin(world, msg.SenderId))
                 {
-                    _ = userMessages.SendTextMessage("You can't join " + world.Name);
+                    _ = userMessages.SendTextMessage($"You can't join world \"{world.Name}\"");
                     return;
                 }
 
-
-
+                _ = userMessages.SendTextMessage($"Getting world orb for \"{world.Name}\"");
                 world.RunSynchronously(async () =>
                 {
                     var orb = world.GetOrb(true);
-                    var a = await userMessages.SendObjectMessage(orb);
+                    var a = await userMessages.SendObjectMessage(orb, OfficialAssets.Graphics.Icons.Dash.Worlds);
                     if (a) world.AllowUserToJoin(msg.SenderId);
                 });
             }
@@ -222,7 +220,7 @@ namespace HeadlessTweaks
                     messages.Add($"[{num}] {world1.Name} | {world1.ActiveUserCount} ({world1.UserCount}) | {world1.AccessLevel}", true);
                     ++num;
                 }
-                messages.Send();
+                _ = messages.Send();
             }
 
 
@@ -232,7 +230,7 @@ namespace HeadlessTweaks
             [Command("throwErr", "Throw Error", "Debug", PermissionLevel.Owner)]
             public static void ThrowError(UserMessages userMessages, Message msg, string[] args)
             {
-                throw new System.Exception("Error Thrown");
+                throw new System.Exception("Throw Error test command");
             }
 
             
@@ -240,9 +238,10 @@ namespace HeadlessTweaks
             // Usage: /throwErrAsync
 
             [Command("throwErrAsync", "Throw Error Asynchronously", "Debug", PermissionLevel.Owner)]
-            public static async System.Threading.Tasks.Task ThrowErrorAsync(UserMessages userMessages, Message msg, string[] args)
+            public static async Task ThrowErrorAsync(UserMessages userMessages, Message msg, string[] args)
             {
-                throw new System.Exception("Async Error Thrown");
+                await Task.CompletedTask;
+                throw new System.Exception("Async Throw Error test command");
             }
         }
     }

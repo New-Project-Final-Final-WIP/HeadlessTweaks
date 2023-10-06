@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using System;
-using NeosHeadless;
+using FrooxEngine.Headless;
+using FrooxEngine;
 
 namespace HeadlessTweaks
 {
@@ -8,58 +9,63 @@ namespace HeadlessTweaks
     {
         internal static void Init(Harmony harmony)
         {
-            var yeah = typeof(NeosCommands).GetMethod("SetupCommonCommands");
-            var what = typeof(NewCommands).GetMethod("Postfix");
+            var target = typeof(HeadlessCommands).GetMethod(nameof(HeadlessCommands.SetupCommonCommands));
+            var postfix = typeof(NewHeadlessCommands).GetMethod(nameof(SetupNewCommands));
 
-            harmony.Patch(yeah, postfix: new HarmonyMethod(what));
+            harmony.Patch(target, postfix: new HarmonyMethod(postfix));
         }
 
-        [HarmonyPatch(typeof(NeosCommands), "SetupCommonCommands")]
-        class NewCommands
+        public static void SetupNewCommands(CommandHandler handler)
         {
-            public static void Postfix(CommandHandler handler)
+            handler.RegisterCommand(new GenericCommand("setUserPermission", "Sets a user's permission level", "<user> <permission>", async (h, world, args) =>
             {
-                handler.RegisterCommand(new GenericCommand("setUserPermission", "Sets a user's permission level", "<user> <permission>", (h, world, args) =>
+                if (args.Count != 2)
                 {
-                    if (args.Count != 2)
+                    HeadlessTweaks.Warn("Please include a user and a permission level");
+                    return;
+                }
+
+                var user = args[0];
+                var permission = args[1];
+
+                var userId = await MessageCommands.TryGetUserId(user);
+
+                if (userId == null)
+                {
+                    HeadlessTweaks.Msg($"Could not find user '{user}', use a user id to override this check");
+                    return;
+                }
+
+
+                if (Enum.TryParse(permission, true, out PermissionLevel levelEnum))
+                {
+                    var levels = HeadlessTweaks.PermissionLevels.GetValue();
+                    levels.Add(userId, levelEnum);
+                    HeadlessTweaks.PermissionLevels.SetValueAndSave(levels);
+
+                    HeadlessTweaks.Msg($"Permission level set to {levelEnum} for {userId}");
+                }
+                else
+                {
+                    HeadlessTweaks.Warn("Invalid permission level");
+                }
+            }));
+
+
+            if (HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook) && HeadlessTweaks.isDiscordLoaded)
+            {
+                handler.RegisterCommand(new GenericCommand("sendToDiscord", "Sends a message to discord", "<message>", (h, world, args) =>
+                {
+                    if (args.Count == 0)
                     {
-                        HeadlessTweaks.Warn("Please include a user and a permission level");
+                        HeadlessTweaks.Warn("Please include a message");
                         return;
                     }
 
-                    var user = args[0];
-                    var permission = args[1];
-
-                    if (Enum.TryParse(permission, true, out PermissionLevel levelEnum))
-                    {
-                        var levels = HeadlessTweaks.config.GetValue(HeadlessTweaks.PermissionLevels);
-                        levels[user] = levelEnum;
-                        HeadlessTweaks.config.Set(HeadlessTweaks.PermissionLevels, levels);
-                        HeadlessTweaks.config.Save();
-
-                        HeadlessTweaks.Msg("Permission level set to " + levelEnum);
-                    }
-                    else
-                    {
-                        HeadlessTweaks.Warn("Invalid permission level");
-                    }
+                    DiscordIntegration.DiscordHelper.SendEmbed(string.Join(" ", args.ToArray()), RadiantUI_Constants.Hero.PURPLE);
                 }));
-
-                bool discordExists = AccessTools.TypeByName("Discord.Webhook.DiscordWebhookClient") != null;
-                if (HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook) && discordExists)
-                {
-                    handler.RegisterCommand(new GenericCommand("sendToDiscord", "Sends a message to discord", "<message>", (h, world, args) =>
-                    {
-                        if (args.Count == 0)
-                        {
-                            HeadlessTweaks.Warn("Please include a message");
-                            return;
-                        }
-
-                        DiscordIntegration.DiscordHelper.SendEmbed(string.Join(" ", args.ToArray()), BaseX.color.FromHexCode("#bb5ec8"));
-                    }));
-                }
             }
         }
+
     }
 }

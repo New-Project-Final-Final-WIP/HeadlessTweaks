@@ -12,25 +12,14 @@ namespace HeadlessTweaks
         // Alliases: The aliases of the command
         // Usage: The arguments of the command
 
-        public class CommandAttribute : Attribute
+        public class CommandAttribute(string name, string description, string category, PermissionLevel permissionLevel = PermissionLevel.None, string usage = null, params string[] aliases) : Attribute
         {
-            public string Name { get; set; }
-            public string Description { get; set; }
-            public string Category { get; set; }
-            public PermissionLevel PermissionLevel { get; set; }
-            public string[] Aliases { get; set; }
-            public string Usage { get; set; }
-
-
-            public CommandAttribute(string name, string description, string category, PermissionLevel permissionLevel = PermissionLevel.None, string usage = null, params string[] aliases)
-            {
-                Name = name;
-                Description = description;
-                Category = category;
-                PermissionLevel = permissionLevel;
-                Aliases = aliases;
-                Usage = usage;
-            }
+            public string Name { get; set; } = name;
+            public string Description { get; set; } = description;
+            public string Category { get; set; } = category;
+            public PermissionLevel PermissionLevel { get; set; } = permissionLevel;
+            public string[] Aliases { get; set; } = aliases;
+            public string Usage { get; set; } = usage;
         }
     }
 }
