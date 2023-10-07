@@ -6,7 +6,7 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
 Adds various commands that you can send to the headless by messaging the headless account in Resonite
  - Try sending `/help` to the headless
 
-You can also view the [list of commands here](CommandList.md) - Currently a little out of date
+You can also view the [list of commands here](CommandList.md) - Can be out of date
 
 
 

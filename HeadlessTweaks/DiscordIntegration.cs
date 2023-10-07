@@ -228,7 +228,7 @@ namespace HeadlessTweaks
                 }
 
                 string userUri = null;
-                if (!string.IsNullOrWhiteSpace(userId)) userUri = user.Cloud.ApiEndpoint + "/api/users/" + userId;
+                if (!string.IsNullOrWhiteSpace(userId)) userUri = user.Cloud.ApiEndpoint + "/users/" + userId;
 
                 embed.WithAuthor(name: userName, iconUrl: userIcon, url: userUri);
                 //embed.WithCurrentTimestamp();

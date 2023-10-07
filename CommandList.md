@@ -29,10 +29,10 @@ This is a list of commands that can be used in-game.
 ### Headless Management
 
 * [message](#message)
-* [friends](#friends)
-* [acceptFriend](#acceptFriend)
-* [addFriend](#addFriend)
-* [removeFriend](#removeFriend)
+* [contacts](#contacts)
+* [acceptContact](#acceptContact)
+* [addContact](#addContact)
+* [removeContact](#removeContact)
 
 ### Moderation
 
@@ -120,49 +120,49 @@ This is a list of commands that can be used in-game.
 ### message
 
 * **Permission:** Owner
-* **Syntax:** /message [user id] [message]
+* **Syntax:** /message [user] [message...]
 * **Description:** Message a user
 * **Category:** Headless Management
 
-### friends
+### contacts
 
 * **Permission:** Owner
-* **Syntax:** /friends 
-* **Description:** List headless friends
+* **Syntax:** /contacts 
+* **Description:** List headless contacts
 * **Category:** Headless Management
 
-### acceptFriend
+### acceptContact
 
 * **Permission:** Owner
-* **Syntax:** /acceptFriend [user id]
-* **Description:** Accept friend request
+* **Syntax:** /acceptContact [user]
+* **Description:** Accept contact request
 * **Category:** Headless Management
 
-### addFriend
+### addContact
 
 * **Permission:** Owner
-* **Syntax:** /addFriend [user id]
-* **Description:** Add friend
+* **Syntax:** /addContact [user]
+* **Description:** Add contact
 * **Category:** Headless Management
 
-### removeFriend
+### removeContact
 
 * **Permission:** Owner
-* **Syntax:** /removeFriend [user id]
-* **Description:** Remove friend
+* **Syntax:** /removeContact [user]
+* **Description:** Remove contact
 * **Category:** Headless Management
 
 ### setPerm
 
 * **Permission:** Moderator
-* **Syntax:** /setPerm [user id] [level]
+* **Syntax:** /setPerm [user] [level]
 * **Description:** Sets a user's permission level
 * **Category:** Moderation
 
 ### getPerm
 
 * **Permission:** Moderator
-* **Syntax:** /getPerm [?user id]
+* **Syntax:** /getPerm [?user]
 * **Description:** Get user permission level
 * **Category:** Moderation
 
@@ -183,7 +183,7 @@ This is a list of commands that can be used in-game.
 ### startWorldTemplate
 
 * **Permission:** Moderator
-* **Syntax:** /startWorldTemplate [template name...] [?SessionAccessLevel]
+* **Syntax:** /startWorldTemplate [template name] [?SessionAccessLevel]
 * **Description:** Start a new world from a template
 * **Category:** World Management
 * **Aliases:** startTemplateWorld
