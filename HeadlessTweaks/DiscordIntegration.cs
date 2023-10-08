@@ -73,7 +73,8 @@ namespace HeadlessTweaks
             harmony.Patch(saveWorld, postfix: new HarmonyMethod(savePostfix));
             Engine.Current.OnShutdown += HeadlessEvents.HeadlessShutdown;
 
-            //HeadlessEvents.HeadlessStartup(); too early?
+            Engine.Current.RunPostInit(HeadlessEvents.HeadlessStartup);
+
         }
         [HarmonyPatch(typeof(World), "SaveWorld")]
         class SaveWorldDiscordEvents
@@ -99,17 +100,20 @@ namespace HeadlessTweaks
         {
             public static void WorldCreated(World world)
             {
-                DiscordHelper.SendWorldEmbed(world, "Started", new Color(r: 0.0f, g: 0.8f, b: 0.8f));
+                if (!EventHelper.IsEnabled(DiscordEvents.WorldCreated)) return;
+                DiscordHelper.SendWorldEmbed(world, "Started", EventHelper.GetColor(DiscordEvents.WorldCreated));
                 return;
             }
             public static void WorldSaved(World world)
             {
-                DiscordHelper.SendWorldEmbed(world, "Saved", new Color(r: 0.8f, g: 0.8f, b: 0.0f));
+                if (!EventHelper.IsEnabled(DiscordEvents.WorldSaved)) return;
+                DiscordHelper.SendWorldEmbed(world, "Saved", EventHelper.GetColor(DiscordEvents.WorldSaved));
                 return;
             }
             public static void WorldDestroyed(World world)
             {
-                DiscordHelper.SendWorldEmbed(world, "Closing", new Color(r: 0.8f, g: 0.2f, b: 0.0f));
+                if (!EventHelper.IsEnabled(DiscordEvents.WorldDestroyed)) return;
+                DiscordHelper.SendWorldEmbed(world, "Closing", EventHelper.GetColor(DiscordEvents.WorldDestroyed));
                 return;
             }
             public static void UserJoined(User user)
@@ -119,20 +123,23 @@ namespace HeadlessTweaks
                     WorldCreated(user.World);
                     if (user.HeadDevice == HeadOutputDevice.Headless) return;
                 }
-                DiscordHelper.SendUserEmbed(user, "Joined", new Color(r: 0.0f, g: 0.8f, b: 0.0f));
+                if (!EventHelper.IsEnabled(DiscordEvents.UserJoin)) return;
+                DiscordHelper.SendUserEmbed(user, "Joined", EventHelper.GetColor(DiscordEvents.UserJoin));
             }
             public static void UserLeft(User user)
             {
-                DiscordHelper.SendUserEmbed(user, "Left", new Color(r: 0.8f, g: 0.0f, b: 0.0f));
+                if (!EventHelper.IsEnabled(DiscordEvents.UserLeft)) return;
+                DiscordHelper.SendUserEmbed(user, "Left", EventHelper.GetColor(DiscordEvents.UserLeft));
             }
             public static void HeadlessStartup()
             {
-                DiscordHelper.SendStartEmbed(Engine.Current, "Headless [{1}] started with version {0}", new Color(r: 0.0f, g: 0.0f, b: 1.0f));
+                if (!EventHelper.IsEnabled(DiscordEvents.EngineStart)) return;
+                DiscordHelper.SendStartEmbed(Engine.Current, "Headless [{1}] started with version {0}", EventHelper.GetColor(DiscordEvents.EngineStart));
             }
             public static void HeadlessShutdown()
             {
-
-                DiscordHelper.SendStartEmbed(Engine.Current, "Shutting down Headless [{1}]", new Color(r: 1.0f, g: 0.0f, b: 0.0f));
+                if (!EventHelper.IsEnabled(DiscordEvents.EngineStop)) return;
+                DiscordHelper.SendStartEmbed(Engine.Current, "Shutting down Headless [{1}]", EventHelper.GetColor(DiscordEvents.EngineStop));
             }
         }
         public class DiscordHelper 
@@ -191,6 +198,7 @@ namespace HeadlessTweaks
             }
             public static async void SendUserEmbed(User user, string action, Color color, string userNameOverride = null, string userIdOverride = null)
             {
+                var cloud = Engine.Current.Cloud;
                 string userName = userNameOverride ?? user.UserName;
                 string userId = userIdOverride ?? user.UserID;
 
@@ -209,7 +217,7 @@ namespace HeadlessTweaks
                     Description = string.Format("{2} {0} [{1}]", SessionName, user.World.HostUser.UserName, action),
                     Color = color
                 };
-                SkyFrost.Base.User cloudUser = (await user.Cloud.Users.GetUser(userId).ConfigureAwait(false))?.Entity;
+                SkyFrost.Base.User cloudUser = (await cloud.Users.GetUser(userId).ConfigureAwait(false))?.Entity;
                 SkyFrost.Base.UserProfile profile = cloudUser?.Profile;
 
 
@@ -221,14 +229,14 @@ namespace HeadlessTweaks
 
 
                 string userIcon = null;// = cloudUser?.Profile?.IconUrl;
-                // if(userIcon!=null)
-                if (userIconUri != null && user.Cloud.Assets.IsValidDBUri(userIconUri))
+
+                if (userIconUri != null && cloud.Assets.IsValidDBUri(userIconUri))
                 { // Convert from NeosDB to Https if needed
-                    userIcon = user.Cloud.Assets.DBToHttp(userIconUri, SkyFrost.Base.DB_Endpoint.Default).AbsoluteUri;
+                    userIcon = cloud.Assets.DBToHttp(userIconUri, SkyFrost.Base.DB_Endpoint.Default).AbsoluteUri;
                 }
 
                 string userUri = null;
-                if (!string.IsNullOrWhiteSpace(userId)) userUri = user.Cloud.ApiEndpoint + "/users/" + userId;
+                if (!string.IsNullOrWhiteSpace(userId)) userUri = cloud.ApiEndpoint + "/users/" + userId;
 
                 embed.WithAuthor(name: userName, iconUrl: userIcon, url: userUri);
                 //embed.WithCurrentTimestamp();
@@ -243,6 +251,56 @@ namespace HeadlessTweaks
                     HeadlessTweaks.Error(e.ToString());
                 }
             }
+        }
+
+
+
+
+        class EventHelper
+        {
+            static readonly Dictionary<DiscordEvents, Color> DefaultColors = new(){
+                { DiscordEvents.EngineStart, FromColorX(RadiantUI_Constants.Hero.CYAN)},
+                { DiscordEvents.EngineStop, FromColorX(RadiantUI_Constants.Hero.RED) },
+                { DiscordEvents.WorldCreated, FromColorX(RadiantUI_Constants.Hero.CYAN) },
+                { DiscordEvents.WorldSaved, FromColorX(RadiantUI_Constants.Hero.YELLOW) },
+                { DiscordEvents.WorldDestroyed, FromColorX(RadiantUI_Constants.Hero.ORANGE) },
+                { DiscordEvents.UserJoin, FromColorX(RadiantUI_Constants.Hero.GREEN) },
+                { DiscordEvents.UserLeft, FromColorX(RadiantUI_Constants.Hero.RED) },
+            };
+
+            public static Color GetColor(DiscordEvents name)
+            {
+                if (HeadlessTweaks.DiscordWebhookEventColors.GetValue().TryGetValue(name, out var color)) return FromColorX(color);
+                
+                return DefaultColors[name];
+            }
+
+            public static bool IsEnabled(DiscordEvents name)
+            {
+                if (HeadlessTweaks.DiscordWebhookEnabledEvents.GetValue().TryGetValue(name, out var enabled)) return enabled; 
+                return true;
+            }
+
+            private static Color FromColorX(Elements.Core.colorX color)
+            {
+                var srgb = color.ToProfile(Elements.Core.ColorProfile.sRGB);
+                return new Color(srgb.r, srgb.g, srgb.b);
+            }
+        }
+        public enum DiscordEvents
+        {
+            EngineStart,
+            HeadlessStart = 0,
+
+            EngineStop,
+            HeadlessStop = 1,
+
+            WorldCreated,
+            WorldSaved,
+            WorldDestroyed,
+
+            UserJoin,
+            UserLeft,
         }
     }
 }

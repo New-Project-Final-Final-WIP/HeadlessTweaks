@@ -3,6 +3,8 @@ using ResoniteModLoader;
 using System;
 using System.Collections.Generic;
 using SkyFrost.Base;
+using System.Runtime.InteropServices;
+using Elements.Core;
 
 namespace HeadlessTweaks
 {
@@ -10,7 +12,7 @@ namespace HeadlessTweaks
     {
         public override string Name => "HeadlessTweaks";
         public override string Author => "New-Project-Final-Final-WIP";
-        public override string Version => "2.0.1";
+        public override string Version => "2.1.0";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isHeadless = false;
@@ -29,7 +31,18 @@ namespace HeadlessTweaks
         public static readonly ModConfigurationKey<string> DiscordWebhookUsername = new("DiscordWebhookUsername", "Discord Webhook Username", () => null);
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<string> DiscordWebhookAvatar = new("DiscordWebhookAvatar", "Discord Webhook Avatar", () => null);
-        
+
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<Dictionary<DiscordIntegration.DiscordEvents, bool>> DiscordWebhookEnabledEvents = new("DiscordWebhookEnabledEvents", "Enabled Discord webhook events", () => new()
+        {
+            { DiscordIntegration.DiscordEvents.EngineStart, false },
+        });
+
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<Dictionary<DiscordIntegration.DiscordEvents, colorX>> DiscordWebhookEventColors = new("DiscordWebhookEventColors", "Discord webhook event colors", () => new());
+
+
+
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<List<string>> AutoInviteOptOutList = new("AutoInviteOptOut", "Auto Invite Opt Out", () => new List<string>(), internalAccessOnly: true);
 
@@ -65,6 +78,8 @@ namespace HeadlessTweaks
         public static readonly ModConfigurationKey<bool> configSaved = new("_configSaved", "_configSaved", internalAccessOnly: true);
 
 
+
+
         public override void OnEngineInit()
         {
             config = GetConfiguration();
@@ -86,7 +101,15 @@ namespace HeadlessTweaks
             // and we can init the Discord client
             if (config.GetValue(UseDiscordWebhook))
             {
-                isDiscordLoaded = Type.GetType("Discord.Webhook.DiscordWebhookClient, Discord.Net.Webhook") != null;
+
+                var typeString = "Discord.Webhook.DiscordWebhookClient, Discord.Net.Webhook";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                { // Windows for some reason requires the full identifier for discord.webhook but not for headless
+                    typeString += ", Version = 3.12.0.0, Culture = neutral, PublicKeyToken = null";
+                }
+
+                Msg(typeString);
+                isDiscordLoaded = Type.GetType(typeString) != null;
 
                 if (isDiscordLoaded) {
                     Msg("Discord.NET library found");

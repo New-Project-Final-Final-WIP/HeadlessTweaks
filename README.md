@@ -75,6 +75,35 @@ You can use the `/setSessionName` chat command to give sessions names. However y
 }
 ```
 
+### Configuring Events
+Events can be disabled using the configuration for `DiscordWebhookEnabledEvents`
+```json
+"DiscordWebhookEnabledEvents": {
+    "HeadlessStart": true,
+    "WorldSaved": false,
+},
+```
+
+Event colors can be changed under `DiscordWebhookEventColors`
+```json
+"DiscordWebhookEventColors": {
+    "WorldSaved": [0;1;0;1],
+    "UserJoin": [0;0;1;1; Linear],
+},
+```
+
+Here are the valid event names,
+```
+EngineStart
+EngineStop
+
+WorldCreated
+WorldSaved
+WorldDestroyed
+
+UserJoin
+UserLeft
+```
 
 ## Installation
 1. Install [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader).
