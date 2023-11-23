@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using SkyFrost.Base;
 using System.Runtime.InteropServices;
 using Elements.Core;
+using FrooxEngine.Headless;
 
 namespace HeadlessTweaks
 {
@@ -93,8 +94,12 @@ namespace HeadlessTweaks
 
             // Check if we are loaded by a headless client
             //Msg(typeof(FrooxEngine.Headless.HeadlessCommands).AssemblyQualifiedName);
-            isHeadless = Type.GetType("FrooxEngine.Headless.HeadlessCommands, Resonite") != null;
-            Msg($"Headless detected: {isHeadless}");
+            //isHeadless = Type.GetType("FrooxEngine.Headless.HeadlessCommands, Resonite") != null;
+            //Msg($"Headless detected: {isHeadless}");
+
+            // Sturdier check for if we're loaded by a headless client
+            SystemInfo info = new();
+            isHeadless = info.HeadDevice == FrooxEngine.HeadOutputDevice.Headless;
 
             // Check if the Discord namespace exists
             // If it does, we can assume that the Discord.NET library is installed
