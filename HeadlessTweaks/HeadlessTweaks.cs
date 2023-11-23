@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using SkyFrost.Base;
 using System.Runtime.InteropServices;
 using Elements.Core;
-using FrooxEngine.Headless;
+using FrooxEngine;
 
 namespace HeadlessTweaks
 {
@@ -98,8 +98,8 @@ namespace HeadlessTweaks
             //Msg($"Headless detected: {isHeadless}");
 
             // Sturdier check for if we're loaded by a headless client
-            SystemInfo info = new();
-            isHeadless = info.HeadDevice == FrooxEngine.HeadOutputDevice.Headless;
+            StandaloneSystemInfo info = new();
+            isHeadless = info.HeadDevice == HeadOutputDevice.Headless;
 
             // Check if the Discord namespace exists
             // If it does, we can assume that the Discord.NET library is installed
