@@ -87,15 +87,15 @@ Events can be disabled using the configuration for `DiscordWebhookEnabledEvents`
 Event colors can be changed under `DiscordWebhookEventColors`
 ```json
 "DiscordWebhookEventColors": {
-    "WorldSaved": [0;1;0;1],
-    "UserJoin": [0;0;1;1; Linear],
+    "WorldSaved": "[0;1;0;1]",
+    "UserJoin": "[0;0;1;1; Linear]",
 },
 ```
 
 Here are the valid event names,
 ```
-EngineStart
-EngineStop
+EngineStart / HeadlessStart
+EngineStop / HeadlessStop
 
 WorldCreated
 WorldSaved
