@@ -1,12 +1,12 @@
 {
   "profiles": {
-    "Launch Windows Neos Headless": {
+    "Launch Windows Headless": {
       "commandName": "Executable",
       "executablePath": "$(HeadlessPath)$(AppName).exe",
       "commandLineArgs": "-LoadAssembly \"Libraries/$(AppName)ModLoader.dll\"",
       "workingDirectory": "$(HeadlessPath)"
     },
-    "Launch Linux Neos Headless": {
+    "Launch Linux Headless": {
       "commandName": "Executable",
       "executablePath": "C:\\Windows\\System32\\wsl.exe",
       "commandLineArgs": "-- mono ./$(AppName).exe -LoadAssembly \"./Libraries/$(AppName)ModLoader.dll\"",

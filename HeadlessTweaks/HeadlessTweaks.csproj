@@ -23,7 +23,7 @@
 		<HeadlessPath Condition="Exists('$(AppPath)Headless\')">$(AppPath)Headless\</HeadlessPath>
 		<HeadlessPath Condition="Exists('$(AppPath)Tools\Headless\')">$(AppPath)Tools\Headless\</HeadlessPath>
 
-		<!-- <AppData Condition="Exists('$(AppPath)$(AppName)_Data')">$(AppPath)$(AppName)_Data\Managed\</AppData> -->
+		<AppData Condition="Exists('$(AppPath)$(AppName)_Data')">$(AppPath)$(AppName)_Data\Managed\</AppData>
 		<HeadlessData>$(HeadlessPath)</HeadlessData>
 		<HeadlessData Condition="Exists('$(HeadlessPath)$(AppName)_Data')">$(HeadlessPath)$(AppName)_Data\Managed\</HeadlessData>
 
@@ -69,11 +69,14 @@
 		<Reference Include="FrooxEngine">
 			<HintPath>$(HeadlessData)FrooxEngine.dll</HintPath>
 		</Reference>
+		<Reference Include="FrooxEngine.Store">
+			<HintPath>$(HeadlessData)FrooxEngine.Store.dll</HintPath>
+		</Reference>
 		<Reference Include="Elements.Assets">
 			<HintPath>$(HeadlessData)Elements.Assets.dll</HintPath>
 		</Reference>
-		<Reference Include="QuantityX">
-			<HintPath>$(HeadlessData)QuantityX.dll</HintPath>
+		<Reference Include="Elements.Quantity">
+			<HintPath>$(HeadlessData)Elements.Quantity.dll</HintPath>
 		</Reference>
 		<Reference Include="$(AppName)">
 			<HintPath>$(HeadlessPath)\$(AppName).exe</HintPath>

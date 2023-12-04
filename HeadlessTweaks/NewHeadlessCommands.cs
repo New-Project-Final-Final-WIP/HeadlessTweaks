@@ -40,7 +40,7 @@ namespace HeadlessTweaks
                 if (Enum.TryParse(permission, true, out PermissionLevel levelEnum))
                 {
                     var levels = HeadlessTweaks.PermissionLevels.GetValue();
-                    levels.Add(userId, levelEnum);
+                    levels[userId] = levelEnum;
                     HeadlessTweaks.PermissionLevels.SetValueAndSave(levels);
 
                     HeadlessTweaks.Msg($"Permission level set to {levelEnum} for {userId}");

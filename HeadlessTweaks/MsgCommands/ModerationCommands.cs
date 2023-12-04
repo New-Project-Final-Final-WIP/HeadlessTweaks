@@ -56,7 +56,7 @@ namespace HeadlessTweaks
                         return;
                     }
                     var levels = HeadlessTweaks.PermissionLevels.GetValue();
-                    levels.Add(userId, levelEnum);
+                    levels[userId] = levelEnum;
                     HeadlessTweaks.PermissionLevels.SetValueAndSave(levels);
 
                     _ = userMessages.SendTextMessage("Permission level set to " + levelEnum);

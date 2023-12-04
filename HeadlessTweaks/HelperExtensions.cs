@@ -6,6 +6,7 @@ using SkyFrost.Base;
 using Elements.Core;
 using ResoniteModLoader;
 using System.Timers;
+using FrooxEngine.Store;
 
 namespace HeadlessTweaks
 {
@@ -93,7 +94,7 @@ namespace HeadlessTweaks
             }
             else
             {
-                FrooxEngine.Record correspondingRecord = world.CorrespondingRecord;
+                FrooxEngine.Store.Record correspondingRecord = world.CorrespondingRecord;
                 orb.URL = correspondingRecord?.GetUrl(Engine.Current.PlatformProfile);
             }
             orb.WorldName = world.Name;
@@ -159,7 +160,7 @@ namespace HeadlessTweaks
 
         // Request an object message from the user
 
-        public static async Task<FrooxEngine.Record> RequestObjectMessage(this UserMessages userMessages, string message, double timeLimit = 45)
+        public static async Task<FrooxEngine.Store.Record> RequestObjectMessage(this UserMessages userMessages, string message, double timeLimit = 45)
         {
             _ = userMessages.SendTextMessage(message);
 
@@ -175,7 +176,7 @@ namespace HeadlessTweaks
                 return null;
             }
             // Extract the record from the message
-            return response.ExtractContent<FrooxEngine.Record>();
+            return response.ExtractContent<FrooxEngine.Store.Record>();
         }
 
         public static async Task<string> RequestTextMessage(this UserMessages userMessages, string message, double timeLimit = 45)

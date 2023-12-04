@@ -44,48 +44,65 @@ namespace HeadlessTweaks
             [Command("contacts", "List headless contacts", "Headless Management", PermissionLevel.Owner)]
             public static void Contacts(UserMessages userMessages, Message msg, string[] args)
             {
-                var list = new List<Contact>();
-                Engine.Current.Cloud.Contacts.GetContacts(list);
-
                 var messages = new BatchMessageHelper(userMessages);
-                foreach (var contact in list)
-                {
-                    if (contact.ContactUserId == userMessages.Cloud.Platform.AppUserId || contact.ContactUserId == userMessages.Cloud.CurrentUserID)
-                        continue;
 
+                // This is messy becaus I am rushing, I'll clean this up eventually
+                List<Contact>[] categories = new List<Contact>[4];
+                categories[0] = new List<Contact>();
+                categories[1] = new List<Contact>();
+                categories[2] = new List<Contact>();
+                categories[3] = new List<Contact>();
+
+                string[] groups = new string[]
+                {
+                    "Requested Contacts: ",
+                    "Accepted Contacts: ",
+                    "Ignored Requests: ",
+                    "Blocked Contacts: ",
+                };
+
+                /*
+                    Requested, // Show purple
+		            Ignored, // Hide
+		            Blocked, // Show red append (BLOCKED)?
+		            Accepted // Show normally
+                */
+
+                Engine.Current.Cloud.Contacts.ForeachContact(contact =>
+                {
+                    if (contact.ContactUserId == userMessages.Cloud.Platform.AppUserId || contact.IsSelfContact)
+                        return;
+                    
                     colorX color = RadiantUI_Constants.TEXT_COLOR;
 
-                    if (contact.ContactStatus == ContactStatus.Requested)
-                        color = RadiantUI_Constants.Hero.CYAN;
-                    messages.Add($"[{contact.ContactUserId}] {contact.ContactUsername}", color, true);
+                    if (contact.IsContactRequest)
+                    {
+                        categories[0].Add(contact);
+                    } else if (contact.ContactStatus == ContactStatus.Accepted)
+                    {
+                        categories[1].Add(contact);
+                    } else if (contact.ContactStatus == ContactStatus.Ignored)
+                    {
+                        categories[2].Add(contact);
+                    } else if (contact.ContactStatus == ContactStatus.Blocked)
+                    {
+                        categories[3].Add(contact);
+                    }
+                });
+
+                for (int i = 0; i < categories.Length; i++)
+                {
+                    if (categories[i].Count == 0) continue;
+
+                    messages.Add($"<size=130%>{groups[i]}</size>", false, true);
+                    
+                    for(int j = 0; j < categories[i].Count; j++)
+                    {
+                        messages.Add($"{categories[i][j].ContactUsername} - [{categories[i][j].ContactUserId}]", true);
+                    }
                 }
+
                 _ = messages.Send();
-            }
-
-            // Accept contact request
-            // Usage: /acceptContact [user]
-
-            [Command("acceptContact", "Accept contact request", "Headless Management", PermissionLevel.Owner, usage: "[user]")]
-            public static async Task Acceptcontact(UserMessages userMessages, Message msg, string[] args)
-            {
-                if (args.Length < 1)
-                {
-                    _ = userMessages.SendTextMessage("Usage: /acceptContact [user]");
-                    return;
-                }
-
-                string userId = await TryGetUserId(args[0], onlyLookupContacts: true);
-
-                var contact = Engine.Current.Cloud.Contacts.GetContact(userId);
-
-                if (contact == null || contact.ContactStatus != ContactStatus.Requested)
-                {
-                    _ = userMessages.SendTextMessage($"There's no contact request from user \"{args[0]}\"");
-                    return;
-                }
-                await Engine.Current.Cloud.Contacts.AddContact(contact);
-
-                _ = userMessages.SendTextMessage($"Contact request accepted from user \"{args[0]}\"");
             }
 
             // Add contact
@@ -96,7 +113,7 @@ namespace HeadlessTweaks
             {
                 if (args.Length < 1)
                 {
-                    _ = userMessages.SendTextMessage("Usage: /acceptContact [user]");
+                    _ = userMessages.SendTextMessage("Usage: /addContact [user]");
                     return;
                 }
 
@@ -106,13 +123,18 @@ namespace HeadlessTweaks
 
                 if (contact != null)
                 {
-                    if (contact.ContactStatus == ContactStatus.Requested)
+                    if (contact.ContactStatus == ContactStatus.Accepted)
                     {
-                        await Engine.Current.Cloud.Contacts.AddContact(contact);
-                        _ = userMessages.SendTextMessage($"Contact request accepted from user \"{args[0]}\"");
+                        _ = userMessages.SendTextMessage($"User \"{args[0]}\" is already contacts with this headless");
+                        return;
+                    } else if (contact.ContactStatus == ContactStatus.Blocked)
+                    {
+                        _ = userMessages.SendTextMessage($"User \"{args[0]}\" is blocked from this headless");
                         return;
                     }
-                    _ = userMessages.SendTextMessage($"User \"{args[0]}\" is already contacts with this headless");
+
+                    await Engine.Current.Cloud.Contacts.AddContact(contact);
+                    _ = userMessages.SendTextMessage($"Contact request accepted from user \"{args[0]}\"");
                     return;
                 }
 
@@ -142,15 +164,32 @@ namespace HeadlessTweaks
 
                 string userId = await TryGetUserId(args[0]);
 
-                var contact = Engine.Current.Cloud.Contacts.GetContact(userId);
-
-                if (contact == null)
+                if(userId == null)
                 {
-                    _ = userMessages.SendTextMessage($"User \"{args[0]}\" is not contacts with this headless");
+                    _ = userMessages.SendTextMessage($"User \"{args[0]}\" could not be found");
                     return;
                 }
-                await Engine.Current.Cloud.Contacts.RemoveContact(contact);
-                _ = userMessages.SendTextMessage($"Removed \"{args[0]}\" from contacts");
+
+                var contact = Engine.Current.Cloud.Contacts.GetContact(userId);
+
+                if (contact != null && Engine.Current.Cloud.Contacts.IsContact(userId))
+                {
+                    await Engine.Current.Cloud.Contacts.RemoveContact(contact);
+
+                    _ = userMessages.SendTextMessage($"Removed \"{args[0]}\" from contacts");
+                    return;
+                }
+
+
+                if (contact != null && contact.IsContactRequest)
+                {
+                    await Engine.Current.Cloud.Contacts.IgnoreRequest(contact);
+
+                    _ = userMessages.SendTextMessage($"Ingoring contact request from \"{args[0]}\"");
+                    return;
+                }
+
+                _ = userMessages.SendTextMessage($"User \"{args[0]}\" is not contacts with this headless");
             }
         }
     }
