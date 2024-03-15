@@ -148,7 +148,7 @@ namespace HeadlessTweaks
             {
                 try
                 {
-                    await discordWebhook.SendMessageAsync(text: message, username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar);
+                    await discordWebhook.SendMessageAsync(text: message, username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
                 }
                 catch (Exception e)
                 {
@@ -174,7 +174,7 @@ namespace HeadlessTweaks
                 embedList.Add(embed.Build());
                 try
                 {
-                    await discordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList);
+                    await discordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
                 }
                 catch (Exception e)
                 {
@@ -244,7 +244,7 @@ namespace HeadlessTweaks
 
                 try
                 {
-                    await discordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList);
+                    await discordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
                 }
                 catch (Exception e)
                 {

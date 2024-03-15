@@ -46,6 +46,7 @@ You can set `UseDiscordWebhook` to `true` in your config to enable these feature
 - `DiscordWebhookKey` - Webhook Key taken from a Discord channel WebHook integration URL (`https://discord.com/api/webhooks/WEBHOOK_ID_HERE/WEBHOOK_KEY_HERE`)
 - `DiscordWebhookUsername` - Display name that will be attached to messages sent by this integration
 - `DiscordWebhookAvatar` - HTTP or RESDB URL to Avatar/PFP image that will be attached to messages sent by this integration
+- `DiscordWebhookThreadID` - The ID of a thread in the channel the Webhook is from to only send headless messages to that thread - Can be left unset
 
 ### Auto Invitation Opt-Out
 It's useful to auto-invite users when a headless spins up. However this can get kind of spammy. Users can opt-out of auto-invites with the `/optOut` chat command or by have their name manually entered in the `AutoInviteOptOut` list. The list simply takes user IDs. For example:
