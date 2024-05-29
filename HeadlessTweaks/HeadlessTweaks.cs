@@ -12,7 +12,7 @@ namespace HeadlessTweaks
     {
         public override string Name => "HeadlessTweaks";
         public override string Author => "New-Project-Final-Final-WIP";
-        public override string Version => "2.1.2";
+        public override string Version => "2.1.3";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isHeadless = false;
@@ -93,6 +93,11 @@ namespace HeadlessTweaks
             }
             Harmony harmony = new("me.New-Project-Final-Final-WIP.HeadlessTweaks");
 
+            // Check if we are loaded by a headless client
+            //Msg(typeof(FrooxEngine.Headless.HeadlessCommands).AssemblyQualifiedName);
+            isHeadless = Type.GetType("FrooxEngine.Headless.HeadlessCommands, Resonite") != null;
+            Msg($"Headless detected: {isHeadless}");
+
             // Check if the Discord namespace exists
             // If it does, we can assume that the Discord.NET library is installed
             // and we can init the Discord client
@@ -116,7 +121,7 @@ namespace HeadlessTweaks
             }
 
             // If we are not loaded by a headless client skip the rest
-            if (!ModLoader.IsHeadless)
+            if (!isHeadless) // ModLoader.IsHeadless takes milenia
             {
                 Warn("Headless Not Detected! Skipping headless specific modules");
                 return;
