@@ -3,6 +3,8 @@ using System.Linq;
 using SkyFrost.Base;
 using System.Reflection;
 using System.Threading.Tasks;
+using System;
+using System.Diagnostics;
 
 namespace HeadlessTweaks
 {
@@ -223,6 +225,36 @@ namespace HeadlessTweaks
                 _ = messages.Send();
             }
 
+            // Shutdown Headless
+            [Command("shutdown", "Shutdown Headless", "Headless Management", PermissionLevel.Owner)]
+            public static async Task ShutDown(UserMessages userMessages, Message msg, string[] args)
+            {
+                await userMessages.SendTextMessage($"Shutting down Headless");
+
+                string sender = msg.SenderId;
+
+                var senderContact = Engine.Current.Cloud.Contacts.GetContact(msg.SenderId);
+                if(senderContact != null) {
+                    sender = senderContact.ContactUsername;
+                }
+
+                HeadlessTweaks.Warn($"Shutdown initiated via command from user {sender}");
+                
+
+                var headlessProgram = Type.GetType("FrooxEngine.Headless.Program, Resonite");
+                var shutdownMethod = headlessProgram?.GetMethod("Shutdown", BindingFlags.NonPublic | BindingFlags.Static);
+
+                if(shutdownMethod != null)
+                {
+                    await (Task)shutdownMethod.Invoke(null, null);
+                    Process.GetCurrentProcess().Kill(); // Process does not fully end without interacting with the terminal, so lets force it
+                    return;
+                }
+                HeadlessTweaks.Error($"Could not find headless shut down method: \n\t\tProgram type: {headlessProgram}\n\t\tShutdown Method: {shutdownMethod}");
+                await userMessages.SendTextMessage($"Could not find headless specific shutdown method\nDefaulting to Userspace shutdown");
+
+                Userspace.ExitApp(false);
+            }
 
             // Throw an error
             // Usage: /throwErr
@@ -230,7 +262,7 @@ namespace HeadlessTweaks
             [Command("throwErr", "Throw Error", "Debug", PermissionLevel.Owner)]
             public static void ThrowError(UserMessages userMessages, Message msg, string[] args)
             {
-                throw new System.Exception("Throw Error test command");
+                throw new Exception("Throw Error test command");
             }
 
             
@@ -241,7 +273,7 @@ namespace HeadlessTweaks
             public static async Task ThrowErrorAsync(UserMessages userMessages, Message msg, string[] args)
             {
                 await Task.CompletedTask;
-                throw new System.Exception("Async Throw Error test command");
+                throw new Exception("Async Throw Error test command");
             }
         }
     }

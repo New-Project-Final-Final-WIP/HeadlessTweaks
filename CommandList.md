@@ -5,8 +5,8 @@ This is a list of commands that can be used in-game.
 ## Categories
 
 * [Common](#Common)
-* [Debug](#Debug)
 * [Headless Management](#HeadlessManagement)
+* [Debug](#Debug)
 * [Moderation](#Moderation)
 * [World Management](#WorldManagement)
 
@@ -21,18 +21,18 @@ This is a list of commands that can be used in-game.
 * [getSessionOrb](#getSessionOrb)
 * [worlds](#worlds)
 
+### Headless Management
+
+* [shutdown](#shutdown)
+* [message](#message)
+* [contacts](#contacts)
+* [addContact](#addContact)
+* [removeContact](#removeContact)
+
 ### Debug
 
 * [throwErr](#throwErr)
 * [throwErrAsync](#throwErrAsync)
-
-### Headless Management
-
-* [message](#message)
-* [contacts](#contacts)
-* [acceptContact](#acceptContact)
-* [addContact](#addContact)
-* [removeContact](#removeContact)
 
 ### Moderation
 
@@ -103,19 +103,12 @@ This is a list of commands that can be used in-game.
 * **Description:** List all worlds
 * **Category:** Common
 
-### throwErr
+### shutdown
 
 * **Permission:** Owner
-* **Syntax:** /throwErr 
-* **Description:** Throw Error
-* **Category:** Debug
-
-### throwErrAsync
-
-* **Permission:** Owner
-* **Syntax:** /throwErrAsync 
-* **Description:** Throw Error Asynchronously
-* **Category:** Debug
+* **Syntax:** /shutdown 
+* **Description:** Shutdown Headless
+* **Category:** Headless Management
 
 ### message
 
@@ -131,13 +124,6 @@ This is a list of commands that can be used in-game.
 * **Description:** List headless contacts
 * **Category:** Headless Management
 
-### acceptContact
-
-* **Permission:** Owner
-* **Syntax:** /acceptContact [user]
-* **Description:** Accept contact request
-* **Category:** Headless Management
-
 ### addContact
 
 * **Permission:** Owner
@@ -151,6 +137,20 @@ This is a list of commands that can be used in-game.
 * **Syntax:** /removeContact [user]
 * **Description:** Remove contact
 * **Category:** Headless Management
+
+### throwErr
+
+* **Permission:** Owner
+* **Syntax:** /throwErr 
+* **Description:** Throw Error
+* **Category:** Debug
+
+### throwErrAsync
+
+* **Permission:** Owner
+* **Syntax:** /throwErrAsync 
+* **Description:** Throw Error Asynchronously
+* **Category:** Debug
 
 ### setPerm
 
