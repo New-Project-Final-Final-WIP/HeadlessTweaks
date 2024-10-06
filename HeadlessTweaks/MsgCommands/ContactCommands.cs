@@ -47,19 +47,14 @@ namespace HeadlessTweaks
                 var messages = new BatchMessageHelper(userMessages);
 
                 // This is messy becaus I am rushing, I'll clean this up eventually
-                List<Contact>[] categories = new List<Contact>[4];
-                categories[0] = new List<Contact>();
-                categories[1] = new List<Contact>();
-                categories[2] = new List<Contact>();
-                categories[3] = new List<Contact>();
-
-                string[] groups = new string[]
-                {
+                List<Contact>[] categories = [[], [], [], []];
+                string[] groups =
+                [
                     "Requested Contacts: ",
                     "Accepted Contacts: ",
                     "Ignored Requests: ",
                     "Blocked Contacts: ",
-                };
+                ];
 
                 /*
                     Requested, // Show purple

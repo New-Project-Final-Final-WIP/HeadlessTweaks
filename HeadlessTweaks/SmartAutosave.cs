@@ -14,13 +14,13 @@ namespace HeadlessTweaks
             //var target = typeof(Userspace).GetMethod("WorldSaveAuto");
             var prefix = typeof(SmartAutosave).GetMethod(nameof(CanSaveOverride));
 
-            harmony.Patch(target, prefix: new HarmonyMethod(prefix));
+            harmony.Patch(target, prefix: new HarmonyMethod(method: prefix));
         }
 
         static Type handlerLoop;
 
         // A map of worlds to booleans 
-        static readonly Dictionary<World, bool> dontSave = new();
+        static readonly Dictionary<World, bool> dontSave = [];
         
         
         public static bool CanSaveOverride(World world, ref bool __result)
@@ -28,9 +28,8 @@ namespace HeadlessTweaks
             if (!HeadlessTweaks.SmartAutosaveEnabled.GetValue())
                 return true;
 
-            if (!dontSave.ContainsKey(world))
-                dontSave.Add(world, false);
-            
+            dontSave.TryAdd(world, false);
+
             // Awful
             // Get call stack
             StackTrace stackTrace = new();

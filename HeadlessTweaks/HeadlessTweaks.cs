@@ -11,8 +11,8 @@ namespace HeadlessTweaks
     public class HeadlessTweaks : ResoniteMod
     {
         public override string Name => "HeadlessTweaks";
-        public override string Author => "New-Project-Final-Final-WIP";
-        public override string Version => "2.1.4";
+        public override string Author => "New_Project_Final_Final_WIP";
+        public override string Version => "2.1.5";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isDiscordLoaded = false;
@@ -40,23 +40,23 @@ namespace HeadlessTweaks
         });
 
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<Dictionary<DiscordIntegration.DiscordEvents, colorX>> DiscordWebhookEventColors = new("DiscordWebhookEventColors", "Discord webhook event colors", () => new());
+        public static readonly ModConfigurationKey<Dictionary<DiscordIntegration.DiscordEvents, colorX>> DiscordWebhookEventColors = new("DiscordWebhookEventColors", "Discord webhook event colors", () => []);
 
 
 
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<List<string>> AutoInviteOptOutList = new("AutoInviteOptOut", "Auto Invite Opt Out", () => new List<string>(), internalAccessOnly: true);
+        public static readonly ModConfigurationKey<List<string>> AutoInviteOptOutList = new("AutoInviteOptOut", "Auto Invite Opt Out", () => [], internalAccessOnly: true);
 
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<Dictionary<string, PermissionLevel>> PermissionLevels = new("PermissionLevels", "Permission Levels", () => new Dictionary<string, PermissionLevel>());
+        public static readonly ModConfigurationKey<Dictionary<string, PermissionLevel>> PermissionLevels = new("PermissionLevels", "Permission Levels", () => []);
 
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<Dictionary<string, string>> WorldRoster = new("WorldRoster", "World Roster", () => new Dictionary<string, string>());
+        public static readonly ModConfigurationKey<Dictionary<string, string>> WorldRoster = new("WorldRoster", "World Roster", () => []);
 
         // Rename sessions in webhook
         // SessionIds to Name
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<Dictionary<string, string>> SessionIdToName = new("SessionIdToName", "SessionIdToName", () => new Dictionary<string, string>() { });
+        public static readonly ModConfigurationKey<Dictionary<string, string>> SessionIdToName = new("SessionIdToName", "SessionIdToName", () => []);
             
         // Default session access level for new sessions
         [AutoRegisterConfigKey]
@@ -74,9 +74,9 @@ namespace HeadlessTweaks
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<bool> SmartAutosaveEnabled = new("SmartAutosave", "Disable autosave if there are no users in current world", () => false);
 
-        // ConfigSaved 
+        /*// ConfigSaved 
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<bool> configSaved = new("_configSaved", "_configSaved", internalAccessOnly: true);
+        public static readonly ModConfigurationKey<bool> configSaved = new("_configSaved", "_configSaved", internalAccessOnly: true);*/
 
 
 
@@ -85,12 +85,13 @@ namespace HeadlessTweaks
         {
             config = GetConfiguration();
             // Initialize default values
-            if (!config.TryGetValue(configSaved, out bool saved) || !saved)
+
+            config.Save(true);
+            /*if (config.ConfigurationItemDefinitions.Where(key => key.).Any())
             {
                 config.Set(configSaved, true);
-                config.Save(true);
-            }
-            Harmony harmony = new("me.New-Project-Final-Final-WIP.HeadlessTweaks");
+            }*/
+            Harmony harmony = new("page.newweb.HeadlessTweaks");
 
             // Check if the Discord namespace exists
             // If it does, we can assume that the Discord.NET library is installed

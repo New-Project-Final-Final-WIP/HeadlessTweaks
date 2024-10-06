@@ -4,7 +4,7 @@
 		<ModLoaderShort>rml</ModLoaderShort>
 
 		<Product>HeadlessTweaks</Product>
-		<Version>2.1.4</Version>
+		<Version>2.1.5</Version>
 
 		<Company>badhaloninja</Company>
 		<Copyright>Copyright © $(Company) 2024</Copyright>
@@ -20,7 +20,8 @@
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
 		<AppDesignerFolder>Properties</AppDesignerFolder>
-		<TargetFramework>net472</TargetFramework>
+		<!--<TargetFramework>net472</TargetFramework>-->
+		<TargetFramework>net8.0</TargetFramework>
 		<LangVersion>preview</LangVersion>
 		<FileAlignment>512</FileAlignment>
 		<Deterministic>true</Deterministic>
@@ -49,10 +50,12 @@
 		<HeadlessPath>$(MSBuildThisFileDirectory)$(AppName)\Headless\</HeadlessPath>
 		<HeadlessPath Condition="Exists('$(AppPath)Headless\')">$(AppPath)Headless\</HeadlessPath>
 		<HeadlessPath Condition="Exists('$(AppPath)Tools\Headless\')">$(AppPath)Tools\Headless\</HeadlessPath>
-
-		<AppData Condition="Exists('$(AppPath)$(AppName)_Data')">$(AppPath)$(AppName)_Data\Managed\</AppData>
+		<!--<HeadlessPath Condition="Exists('$(HeadlessPath)net8.0\')">$(HeadlessPath)net8.0\</HeadlessPath>-->
+		<!--<HeadlessPath Condition="Exists('E:\Resonite\Headless\')">E:\Resonite\Headless\</HeadlessPath>-->
+		
 		<HeadlessData>$(HeadlessPath)</HeadlessData>
-		<HeadlessData Condition="Exists('$(HeadlessPath)$(AppName)_Data')">$(HeadlessPath)$(AppName)_Data\Managed\</HeadlessData>
+		<!--<HeadlessData Condition="Exists('$(HeadlessPath)$(AppName)_Data')">$(HeadlessPath)$(AppName)_Data\Managed\</HeadlessData>-->
+		<HeadlessData Condition="Exists('$(HeadlessPath)\Windows\')">$(HeadlessPath)Windows\</HeadlessData>
 
 		<ModLibrariesPath>$(HeadlessPath)$(ModLoaderShort)_libs\</ModLibrariesPath>
 		<ModsPath>$(HeadlessPath)$(ModLoaderShort)_mods\</ModsPath>
@@ -60,20 +63,21 @@
 
 	<ItemGroup>
 		<!-- Referencing Webhook will also reference Core and Rest -->
-		<PackageReference Include="Discord.Net.Webhook" Version="3.12.0" />
+		<PackageReference Include="Discord.Net.Webhook" Version="3.15.2" />
 		<!-- These packages are to make sure the Discord.Net packages don't force a lower version of the System binaries that the platform uses -->
 		<!-- Will probably need to manually update these -->
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
+		<!--<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
 		<PackageReference Include="System.Memory" Version="4.5.5" />
 		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
 		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
-		<PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+		<PackageReference Include="System.Collections.Immutable" Version="8.0.0" />-->
 	</ItemGroup>
 
 	<ItemGroup>
 		<Reference Include="HarmonyLib">
 			<HintPath>$(HeadlessPath)$(ModLoaderShort)_libs\0Harmony.dll</HintPath>
 			<HintPath Condition="Exists('$(HeadlessPath)0Harmony.dll')">$(HeadlessPath)0Harmony.dll</HintPath>
+			<HintPath Condition="Exists('$(HeadlessPath)$(ModLoaderShort)_libs\0Harmony-Net8.dll')">$(HeadlessPath)$(ModLoaderShort)_libs\0Harmony-Net8.dll</HintPath>
 		</Reference>
 		<Reference Include="Elements.Core">
 			<HintPath>$(HeadlessData)Elements.Core.dll</HintPath>
@@ -98,6 +102,9 @@
 		</Reference>
 		<Reference Include="$(AppName)">
 			<HintPath>$(HeadlessPath)\$(AppName).exe</HintPath>
+			<HintPath Condition="Exists('$(HeadlessData)\$(AppName).exe')">$(HeadlessData)\$(AppName).exe</HintPath>
+			<HintPath Condition="Exists('$(HeadlessPath)\$(AppName).dll')">$(HeadlessPath)\$(AppName).dll</HintPath>
+			<HintPath Condition="Exists('$(HeadlessData)\$(AppName).dll')">$(HeadlessData)\$(AppName).dll</HintPath>
 		</Reference>
 		<Reference Include="$(AppName)ModLoader">
 			<HintPath>$(HeadlessPath)$(AppName)ModLoader.dll</HintPath>
@@ -108,18 +115,18 @@
 			<HintPath>$(HeadlessPath)\Newtonsoft.Json.dll</HintPath>
 		</Reference>
 
-		<Reference Include="System.Buffers">
+		<!--<Reference Include="System.Buffers">
 			<HintPath>$(HeadlessPath)\System.Buffers.dll</HintPath>
 		</Reference>
-		<!-- <Reference Include="System.Collections.Immutable">
+		<Reference Include="System.Collections.Immutable">
 			<HintPath>$(HeadlessPath)\System.Collections.Immutable.dll</HintPath>
-		</Reference> -->
+		</Reference>
 		<Reference Include="System.Numerics.Vectors">
 			<HintPath>$(HeadlessPath)\System.Numerics.Vectors.dll</HintPath>
 		</Reference>
 		<Reference Include="System.Threading.Tasks.Extensions">
 			<HintPath>$(HeadlessPath)\System.Threading.Tasks.Extensions.dll</HintPath>
-		</Reference>
+		</Reference>-->
 	</ItemGroup>
 
 
@@ -127,8 +134,8 @@
 		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)" />
 		<Message Text="Copied $(TargetFileName) to $(ModsPath)" Importance="high" />
 
-
+		<!--
 		<Copy SourceFiles="$(TargetDir)Discord.Net.Core.dll;$(TargetDir)Discord.Net.Rest.dll;$(TargetDir)Discord.Net.Webhook.dll;" DestinationFolder="$(ModLibrariesPath)" Condition="'$(CopyDiscordToLib)'=='true'" />
-		<Message Text="Copied Discord.Net libraries to $(ModLibrariesPath)" Importance="high" Condition="'$(CopyDiscordToLib)'=='true'" />
+		<Message Text="Copied Discord.Net libraries to $(ModLibrariesPath)" Importance="high" Condition="'$(CopyDiscordToLib)'=='true'" />-->
 	</Target>
 </Project>

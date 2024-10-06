@@ -18,7 +18,7 @@ namespace HeadlessTweaks
             var prefix = typeof(AutoInviteOptOut).GetMethod(nameof(AutoInvitePrefix));
             var postfix = typeof(AutoInviteOptOut).GetMethod(nameof(AutoInvitePostfix));
 
-            harmony.Patch(target, prefix: new HarmonyMethod(prefix), postfix: new HarmonyMethod(postfix));
+            harmony.Patch(target, prefix: new HarmonyMethod(method: prefix), postfix: new HarmonyMethod(method: postfix));
         }
 
 
@@ -29,7 +29,7 @@ namespace HeadlessTweaks
                 __state = null;
                 return;
             }
-            __state = info.AutoInviteUsernames.ToList(); // Create a copy
+            __state = [.. info.AutoInviteUsernames]; // Create a copy
             info.AutoInviteUsernames.Clear();
         }
         public static async void AutoInvitePostfix(WorldStartupParameters info, List<string> __state, World world, Task __result)

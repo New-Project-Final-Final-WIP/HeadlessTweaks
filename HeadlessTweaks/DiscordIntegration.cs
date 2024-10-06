@@ -9,7 +9,7 @@ namespace HeadlessTweaks
 {
     public class DiscordIntegration
     {
-        public static DiscordWebhookClient discordWebhook;
+        private static DiscordWebhookClient discordWebhook;
 
         public static string DiscordWebhookName
         {
@@ -52,6 +52,8 @@ namespace HeadlessTweaks
             }
         }
 
+        public static DiscordWebhookClient DiscordWebhook { get => discordWebhook; private set => discordWebhook = value; }
+
         public static void Init(Harmony harmony)
         {
             if (!HeadlessTweaks.config.GetValue(HeadlessTweaks.UseDiscordWebhook)) return;
@@ -61,7 +63,7 @@ namespace HeadlessTweaks
                 return;
             }
             
-            discordWebhook = new DiscordWebhookClient("https://discord.com/api/webhooks/" + HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookID) + "/" + HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookKey));
+            DiscordWebhook = new DiscordWebhookClient("https://discord.com/api/webhooks/" + HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookID) + "/" + HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookKey));
 
             var startSession = typeof(World).GetMethod("StartSession");
             var saveWorld = typeof(World).GetMethod("SaveWorld");
@@ -69,8 +71,8 @@ namespace HeadlessTweaks
             var startPostfix = typeof(OtherDiscordEvents).GetMethod("Postfix");
             var savePostfix = typeof(SaveWorldDiscordEvents).GetMethod("Postfix");
 
-            harmony.Patch(startSession, postfix: new HarmonyMethod(startPostfix));
-            harmony.Patch(saveWorld, postfix: new HarmonyMethod(savePostfix));
+            harmony.Patch(startSession, postfix: new HarmonyMethod(method: startPostfix));
+            harmony.Patch(saveWorld, postfix: new HarmonyMethod(method: savePostfix));
             Engine.Current.OnShutdown += HeadlessEvents.HeadlessShutdown;
 
             Engine.Current.RunPostInit(HeadlessEvents.HeadlessStartup);
@@ -148,7 +150,7 @@ namespace HeadlessTweaks
             {
                 try
                 {
-                    await discordWebhook.SendMessageAsync(text: message, username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
+                    await DiscordWebhook.SendMessageAsync(text: message, username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
                 }
                 catch (Exception e)
                 {
@@ -165,7 +167,7 @@ namespace HeadlessTweaks
             
             public static async void SendEmbed(string message, Color color)
             {
-                List<Embed> embedList = new();
+                List<Embed> embedList = [];
                 var embed = new EmbedBuilder
                 {
                     Description = message,
@@ -174,7 +176,7 @@ namespace HeadlessTweaks
                 embedList.Add(embed.Build());
                 try
                 {
-                    await discordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
+                    await DiscordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
                 }
                 catch (Exception e)
                 {
@@ -190,9 +192,9 @@ namespace HeadlessTweaks
                 string SessionName = world.RawName;
                 // TODO: Make this configurable 
                 var mappings = HeadlessTweaks.SessionIdToName.GetValue();
-                if (mappings.ContainsKey(world.SessionId))
+                if (mappings.TryGetValue(world.SessionId, out string value))
                 {
-                    SessionName = mappings[world.SessionId];
+                    SessionName = value;
                 }
                 SendEmbed(string.Format("{0} [{1}] {2}", SessionName, world.HostUser.UserName, action), color);
             }
@@ -205,12 +207,12 @@ namespace HeadlessTweaks
                 string SessionName = user.World.RawName;
 
                 var mappings = HeadlessTweaks.SessionIdToName.GetValue();
-                if (mappings.ContainsKey(user.World.SessionId))
+                if (mappings.TryGetValue(user.World.SessionId, out string value))
                 {
-                    SessionName = mappings[user.World.SessionId];
+                    SessionName = value;
                 }
                 
-                List<Embed> embedList = new();
+                List<Embed> embedList = [];
                 var embed = new EmbedBuilder
                 {
                     // Embed property can be set within object initializer
@@ -244,7 +246,7 @@ namespace HeadlessTweaks
 
                 try
                 {
-                    await discordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
+                    await DiscordWebhook.SendMessageAsync(username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, embeds: embedList, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
                 }
                 catch (Exception e)
                 {

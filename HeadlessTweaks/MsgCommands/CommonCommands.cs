@@ -26,12 +26,12 @@ namespace HeadlessTweaks
                 {
                     var commandStr = args[0];
                     // Check if command exists
-                    if (!commands.ContainsKey(commandStr.ToLower()))
+                    if (!_RegisteredCommands.ContainsKey(commandStr.ToLower()))
                     {
                         userMessages.SendTextMessage($"Command '{commandStr}' not found");
                         return;
                     }
-                    var method = commands[commandStr.ToLower()];
+                    var method = _RegisteredCommands[commandStr.ToLower()];
 
                     var attr = method.GetCustomAttribute<CommandAttribute>();
 
@@ -74,10 +74,10 @@ namespace HeadlessTweaks
                 //var messages = new BatchMessageHelper(userMessages);
 
                 // Iterate over all commands and print them
-                var commandList = commands.ToList();
+                var commandList = _RegisteredCommands.ToList();
 
                 // Ignore aliases defined in the CommandAttribute
-                commandList.RemoveAll(x => x.Value.GetCustomAttribute<CommandAttribute>()?.Name.ToLower() != x.Key.ToLower());
+                commandList.RemoveAll(x => !(x.Value.GetCustomAttribute<CommandAttribute>()?.Name).Equals(x.Key, StringComparison.CurrentCultureIgnoreCase));
 
 
                 foreach (var command in commandList)
