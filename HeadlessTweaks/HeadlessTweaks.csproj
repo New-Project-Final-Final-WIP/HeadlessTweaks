@@ -4,10 +4,10 @@
 		<ModLoaderShort>rml</ModLoaderShort>
 
 		<Product>HeadlessTweaks</Product>
-		<Version>2.1.5</Version>
+		<Version>2.1.6</Version>
 
 		<Company>badhaloninja</Company>
-		<Copyright>Copyright © $(Company) 2024</Copyright>
+		<Copyright>Copyright © $(Company) 2025</Copyright>
 
 		<Authors>$(Company)</Authors>
 		<AssemblyTitle>$(Product)</AssemblyTitle>
