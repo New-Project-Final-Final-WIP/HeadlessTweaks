@@ -71,24 +71,26 @@ namespace HeadlessTweaks
         private static World GetWorld(UserMessages userMessages, string worldName)
         {
             var worlds = Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld);
-            var world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
-            if (world == null)
+            World world = null;
+
+            if (int.TryParse(worldName, out var result))
             {
-                if (int.TryParse(worldName, out var result))
+                var worldList = worlds.ToList();
+                if (result < 0 || result >= worldList.Count)
                 {
-                    var worldList = worlds.ToList();
-                    if (result < 0 || result >= worldList.Count)
-                    {
-                        userMessages.SendTextMessage("World index out of range");
-                        return null;
-                    }
-                    world = worldList[result];
-                }
-                else
-                {
-                    userMessages.SendTextMessage("No world found with the name " + worldName);
+                    userMessages.SendTextMessage("World index out of range");
                     return null;
                 }
+                world = worldList[result];
+            } else
+            {
+                world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
+            }
+
+            if (world == null)
+            {
+                userMessages.SendTextMessage("No world found with the name " + worldName);
+                return null;
             }
             return world;
         }
@@ -102,10 +104,11 @@ namespace HeadlessTweaks
             if (string.IsNullOrWhiteSpace(worldName))
             { // if no world name given, get the user's world
                 var userWorlds = Engine.Current.WorldManager.Worlds.Where(w => w.GetUserByUserId(userId) != null);
-                if (userWorlds.Count() != 0)
+                if (userWorlds.Any())
                 {
                     world = userWorlds.FirstOrDefault((w) => w.GetUserByUserId(userId).IsPresentInWorld);
                 }
+
                 if (world == null)
                 {  // if no world found tell the user
                     if (!defaultFocused)
@@ -226,7 +229,7 @@ namespace HeadlessTweaks
         {
             public UserMessages UserMessages { get; private set; } = userMessages;
             // list of messages to send
-            public List<string> Messages { get; private set; } = new List<string>();
+            public List<string> Messages { get; private set; } = [];
 
             public string Prefix { get; private set; } = prefix;
 
@@ -246,17 +249,17 @@ namespace HeadlessTweaks
                 } else {
                     _alphaMod = true; // reset alpha mod to true so if modulation continues it will start with alpha
                 }
-                // TODO: if the message is too long, split it into multiple messages before continuing
+                // TODO if the message is too long, split it into multiple messages before continuing
 
                 if (!forceNewMessage && Messages.Count != 0 && Messages.Last().Length + message.Length < 512)
                 {
-                    Messages[Messages.Count - 1] += "\n" + message;
+                    Messages[^1] += "\n" + message;
                     return;
                 }
                 Messages.Add(Prefix + message);
             }
 
-            // add message colr
+            // add message color
             public void Add(string message, colorX color, bool modulateAlpha = false)
             {
                 if(color != RadiantUI_Constants.TEXT_COLOR)

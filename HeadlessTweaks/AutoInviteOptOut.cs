@@ -1,10 +1,6 @@
-﻿using Elements.Core;
+﻿using SkyFrost.Base;
 using FrooxEngine;
 using HarmonyLib;
-using SkyFrost.Base;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System;
 
 namespace HeadlessTweaks
@@ -16,63 +12,27 @@ namespace HeadlessTweaks
 
             var target = typeof(WorldStartSettingsExtensions).GetMethod(nameof(WorldStartSettingsExtensions.SetWorldParameters));
             var prefix = typeof(AutoInviteOptOut).GetMethod(nameof(AutoInvitePrefix));
-            var postfix = typeof(AutoInviteOptOut).GetMethod(nameof(AutoInvitePostfix));
 
-            harmony.Patch(target, prefix: new HarmonyMethod(method: prefix), postfix: new HarmonyMethod(method: postfix));
+            harmony.Patch(target, prefix: new HarmonyMethod(method: prefix));
         }
 
 
-        public static void AutoInvitePrefix(WorldStartupParameters info, out List<string> __state)
+        public static void AutoInvitePrefix(ref WorldStartupParameters info)
         {
-            if (info.AutoInviteUsernames == null)
-            {
-                __state = null;
-                return;
-            }
-            __state = [.. info.AutoInviteUsernames]; // Create a copy
-            info.AutoInviteUsernames.Clear();
+            info.AutoInviteUsernames?.RemoveAll(CheckSkippedUsernames);
         }
-        public static async void AutoInvitePostfix(WorldStartupParameters info, List<string> __state, World world, Task __result)
+
+        private static bool CheckSkippedUsernames(string username)
         {
-            if (__state == null || __state.Count <= 0) return;
-
-            if (world.Engine.Cloud.CurrentUser == null)
+            // This would be simpler if HeadlessTweaks used usernames in config instead of userids
+            var contact = Engine.Current.Cloud.Contacts.FindContact((Contact f) => f.ContactUsername.Equals(username, StringComparison.InvariantCultureIgnoreCase));
+            
+            if (contact != null)
             {
-                UniLog.Log("Not logged in, cannot send auto-invites!");
-                return;
+                return HeadlessTweaks.AutoInviteOptOutList.GetValue().Contains(contact.ContactUserId);
             }
 
-            /* The hubris of programmers can be a cause of their downfall, especially when dealing with complex systems.
-             * This act of laziness can lead to a cascade of issues that can exacerbate the original problem and make it difficult to resolve.
-             * Despite this, some programmers settle with a different bad solution that works and is bad, rather than seeking help or taking the time to transpile a method.
-             * It takes humility and discipline to do things properly and avoid taking shortcuts that can lead to long-term negative consequences. 
-             * That humility is not mine.
-            */
-            await __result; // :)
-            info.AutoInviteUsernames.AddRange(__state);
-
-            foreach (string username in __state)
-            {
-                Contact contact = world.Engine.Cloud.Contacts.FindContact(f =>
-                    f.ContactUsername.Equals(username, StringComparison.InvariantCultureIgnoreCase));
-
-                if (contact == null)
-                {
-                    UniLog.Log(username + " is not in the contacts list, cannot auto-invite", false);
-                    continue;
-                }
-                if (HeadlessTweaks.AutoInviteOptOutList.GetValue().Contains(contact.ContactUserId)) continue;
-
-                UserMessages messages = world.Engine.Cloud.Messages.GetUserMessages(contact.ContactUserId);
-
-                world.AllowUserToJoin(contact.ContactUserId);
-                if (!string.IsNullOrWhiteSpace(info.AutoInviteMessage))
-                {
-                    await messages.SendTextMessage(info.AutoInviteMessage);
-                }
-                await messages.SendMessage(await messages.CreateInviteMessage(world));
-                UniLog.Log(username + " invited.");
-            }
+            return false;
         }
     }
 }

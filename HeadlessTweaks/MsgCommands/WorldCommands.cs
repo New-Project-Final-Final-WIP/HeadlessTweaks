@@ -65,7 +65,7 @@ namespace HeadlessTweaks
             // Start a new world from a template
             // Usage: /startWorldTemplate [template name] [?SessionAccessLevel]
 
-            [Command("startWorldTemplate", "Start a new world from a template", "World Management", PermissionLevel.Moderator, usage: "[template name] [?SessionAccessLevel]", "startTemplateWorld")]
+            [Command("startWorldTemplate", "Start a new world from a template", "World Management", PermissionLevel.Moderator, aliases: ["startTemplateWorld"], usage: "[template name] [?SessionAccessLevel]")]
             public static async Task StartWorldTemplate(UserMessages userMessages, Message msg, string[] args)
             {
                 if (args.Length < 1)
@@ -281,7 +281,7 @@ namespace HeadlessTweaks
                 newArgs.Insert(0, msg.SenderId);
 
                 // Call the set role command
-                await Role(userMessages, msg, newArgs.ToArray());
+                await Role(userMessages, msg, [.. newArgs]);
             }
 
             // Add a world to the world roster list
@@ -462,7 +462,7 @@ namespace HeadlessTweaks
             // Usage: /setSessionAccessLevel [SessionAccessLevel] [?hidden] [?world name...]
             [Command("setSessionAccessLevel", "Set the access level of a session", "World Management", PermissionLevel.Moderator, usage: "[access level] [?hidden] [?world name...]")]
             public static void SetSessionAccessLevel(UserMessages userMessages, Message msg, string[] args)
-            { // TODO: test this command
+            {
                 if (args.Length < 1)
                 {
                     _ = userMessages.SendTextMessage("Usage: /setSessionAccessLevel [access level] [?hidden] [?world name...]");
@@ -500,10 +500,45 @@ namespace HeadlessTweaks
                 _ = userMessages.SendTextMessage($"Session access level set to {(hidden ? "Hidden, " : null)}{accessLevel} for \"{world.Name}\"");
             }
 
+            // hide from listing command
+            // Usage: /hideFromListing [hidden] [?world name...]
+            [Command("hideFromListing", "Sets whether the session should be hidden from listing or not", "World Management", PermissionLevel.Moderator, usage: "[hidden] [?world name...]")]
+            public static void HideFromListing(UserMessages userMessages, Message msg, string[] args)
+            {
+                if (args.Length < 1)
+                {
+                    _ = userMessages.SendTextMessage("Usage: /hideFromListing [hidden] [?world name...]");
+                    return;
+                }
+
+                if (!bool.TryParse(args[0], out bool hide))
+                {
+                    _ = userMessages.SendTextMessage($"Invalid value for hidden argument: '{args[0]}'");
+                    return;
+                }
+
+                // Get the world name from joining the args
+                // skip the hidden flag if it was parsed
+                var worldName = string.Join(" ", args.Skip(1));
+
+                // Get the users world or focused world
+                var world = GetWorldOrUserWorld(userMessages, worldName, msg.SenderId, false);
+                if (world == null)
+                    return;
+
+                world.HideFromListing = hide;
+                if (hide)
+                {
+                    _ = userMessages.SendTextMessage($"World {world.Name} is now hidden from listing");
+                    return;
+                }
+                _ = userMessages.SendTextMessage($"World {world.Name} is now shown in listing");
+            }
+
             // set session name command
             // Usage: /setSessionName [?target world...]
             // alias: setWorldName, worldName, sessionName
-            [Command("setSessionName", "Set the name of a session", "World Management", PermissionLevel.Moderator, usage: "[?target world...]", "setWorldName", "worldName", "sessionName")]
+            [Command("setSessionName", "Set the name of a session", "World Management", PermissionLevel.Moderator, aliases: ["setWorldName", "worldName", "sessionName"], usage: "[?target world...]")]
             public static async Task SetSessionName(UserMessages userMessages, Message msg, string[] args)
             {
                 // Get the world name from joining the args

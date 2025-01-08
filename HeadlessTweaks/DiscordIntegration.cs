@@ -190,7 +190,7 @@ namespace HeadlessTweaks
             public static void SendWorldEmbed(World world, string action, Color color)
             {
                 string SessionName = world.RawName;
-                // TODO: Make this configurable 
+                // TODO Make this configurable 
                 var mappings = HeadlessTweaks.SessionIdToName.GetValue();
                 if (mappings.TryGetValue(world.SessionId, out string value))
                 {

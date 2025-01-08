@@ -31,12 +31,13 @@ namespace HeadlessTweaks
             // Loop through all the methods and add them to the dictionary
             foreach (var method in cmdMethods)
             {
-                var cmdName = method.GetCustomAttribute<CommandAttribute>().Name.ToLower();
-                
+                var attribute = method.GetCustomAttribute<CommandAttribute>();
+                var cmdName = attribute.Name.ToLower();
+
                 _RegisteredCommands.Add(cmdName, method);
 
                 // Add all the aliases to the dictionary
-                foreach (var alias in method.GetCustomAttribute<CommandAttribute>().Aliases)
+                foreach (var alias in attribute.Aliases)
                 {
                     _RegisteredCommands.Add(alias.ToLower(), method);
                 }
@@ -86,7 +87,7 @@ namespace HeadlessTweaks
                     if (msg.Content.StartsWith('/'))
                     {
                         var args = StringHelper.ParseArguments(msg.Content);
-                        var cmd = args[0].Substring(1).ToLower();
+                        var cmd = args[0][1..].ToLower();
                         var cmdArgs = args.Skip(1).ToArray();
 
                         _RegisteredCommands.TryGetValue(cmd, out MethodInfo cmdMethod);

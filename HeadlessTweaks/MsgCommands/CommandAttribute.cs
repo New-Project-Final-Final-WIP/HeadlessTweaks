@@ -13,13 +13,13 @@ namespace HeadlessTweaks
         // Usage: The arguments of the command
 
         [AttributeUsage(AttributeTargets.Method)]
-        public class CommandAttribute(string name, string description, string category, PermissionLevel permissionLevel = PermissionLevel.None, string usage = null, params string[] aliases) : Attribute
+        public class CommandAttribute(string name, string description, string category, PermissionLevel permissionLevel = PermissionLevel.None, string[] aliases = null, string usage = null) : Attribute
         {
             public string Name { get; set; } = name;
             public string Description { get; set; } = description;
             public string Category { get; set; } = category;
             public PermissionLevel PermissionLevel { get; set; } = permissionLevel;
-            public string[] Aliases { get; set; } = aliases;
+            public string[] Aliases { get; set; } = aliases??[];
             public string Usage { get; set; } = usage;
         }
     }

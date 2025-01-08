@@ -136,7 +136,7 @@ namespace HeadlessTweaks
             // Invite me to a specific world by name or to the current world if no name is given
             // Usage: /reqInvite [?world name...]
 
-            [Command("reqInvite", "Requests an invite to a world", "Common", PermissionLevel.None, usage: "[?world name...]", "requestInvite")]
+            [Command("reqInvite", "Requests an invite to a world", "Common", PermissionLevel.None, aliases: ["requestInvite"], usage: "[?world name...]")]
             public static void ReqInvite(UserMessages userMessages, Message msg, string[] args)
             {
                 World world = null;

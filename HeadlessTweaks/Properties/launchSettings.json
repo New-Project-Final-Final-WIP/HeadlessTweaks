@@ -2,14 +2,14 @@
   "profiles": {
     "Launch Windows Headless": {
       "commandName": "Executable",
-      "executablePath": "$(HeadlessPath)$(AppName).exe",
-      "commandLineArgs": "-LoadAssembly \"Libraries/$(AppName)ModLoader.dll\"",
+      "executablePath": "$(HeadlessExecutableWindows)$(AppName).exe",
+      "commandLineArgs": "-LoadAssembly \"Libraries/$(AppName)ModLoader.dll\" -HeadlessConfig Config/Config.json",
       "workingDirectory": "$(HeadlessPath)"
     },
     "Launch Linux Headless": {
       "commandName": "Executable",
       "executablePath": "C:\\Windows\\System32\\wsl.exe",
-      "commandLineArgs": "-- mono ./$(AppName).exe -LoadAssembly \"./Libraries/$(AppName)ModLoader.dll\"",
+      "commandLineArgs": "dotnet $(HeadlessExecutableLinux)$(AppName).dll -LoadAssembly \"Libraries/$(AppName)ModLoader.dll\" -HeadlessConfig Config/Config.json",
       "workingDirectory": "$(HeadlessPath)"
     }
   }

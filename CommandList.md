@@ -56,6 +56,7 @@ This is a list of commands that can be used in-game.
 * [listWorlds](#listWorlds)
 * [closeWorld](#closeWorld)
 * [setSessionAccessLevel](#setSessionAccessLevel)
+* [hideFromListing](#hideFromListing)
 * [setSessionName](#setSessionName)
 
 ## Command Details
@@ -270,6 +271,13 @@ This is a list of commands that can be used in-game.
 * **Permission:** Moderator
 * **Syntax:** /setSessionAccessLevel [access level] [?hidden] [?world name...]
 * **Description:** Set the access level of a session
+* **Category:** World Management
+
+### hideFromListing
+
+* **Permission:** Moderator
+* **Syntax:** /hideFromListing [hidden] [?world name...]
+* **Description:** Sets whether the session should be hidden from listing or not
 * **Category:** World Management
 
 ### setSessionName

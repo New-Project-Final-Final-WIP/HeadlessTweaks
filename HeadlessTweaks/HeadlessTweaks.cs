@@ -87,10 +87,6 @@ namespace HeadlessTweaks
             // Initialize default values
 
             config.Save(true);
-            /*if (config.ConfigurationItemDefinitions.Where(key => key.).Any())
-            {
-                config.Set(configSaved, true);
-            }*/
             Harmony harmony = new("page.newweb.HeadlessTweaks");
 
             // Check if the Discord namespace exists
