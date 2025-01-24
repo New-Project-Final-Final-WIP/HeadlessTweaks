@@ -10,6 +10,7 @@ namespace HeadlessTweaks
     public class DiscordIntegration
     {
         private static DiscordWebhookClient discordWebhook;
+        public static DiscordWebhookClient DiscordWebhook { get => discordWebhook; private set => discordWebhook = value; }
 
         public static string DiscordWebhookName
         {
@@ -52,7 +53,6 @@ namespace HeadlessTweaks
             }
         }
 
-        public static DiscordWebhookClient DiscordWebhook { get => discordWebhook; private set => discordWebhook = value; }
 
         public static void Init(Harmony harmony)
         {
@@ -73,7 +73,7 @@ namespace HeadlessTweaks
 
             harmony.Patch(startSession, postfix: new HarmonyMethod(method: startPostfix));
             harmony.Patch(saveWorld, postfix: new HarmonyMethod(method: savePostfix));
-            Engine.Current.OnShutdown += HeadlessEvents.HeadlessShutdown;
+            Engine.Current.OnShutdown += HeadlessEvents.HeadlessShutdown; // OnShutdownRequest
 
             Engine.Current.RunPostInit(HeadlessEvents.HeadlessStartup);
 
@@ -98,7 +98,7 @@ namespace HeadlessTweaks
                 return;
             }
         }
-        public class HeadlessEvents
+        public static class HeadlessEvents
         {
             public static void WorldCreated(World world)
             {
@@ -122,6 +122,8 @@ namespace HeadlessTweaks
             {
                 if (user.IsHost)
                 {
+                    // World.WorldRunning is too early for any world name
+                    // But getting the headless' session name requires too much jank due to the weird time it sets the name for startup sessions
                     WorldCreated(user.World);
                     if (user.HeadDevice == HeadOutputDevice.Headless) return;
                 }
@@ -146,10 +148,11 @@ namespace HeadlessTweaks
         }
         public class DiscordHelper 
         {
-            public static async void SendMessage(string message)
+            public static async void SendMessage(string message = "null")
             {
                 try
                 {
+                    message ??= "null";
                     await DiscordWebhook.SendMessageAsync(text: message, username: DiscordWebhookName, avatarUrl: DiscordWebhookAvatar, threadId: HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookThreadID));
                 }
                 catch (Exception e)
@@ -185,7 +188,7 @@ namespace HeadlessTweaks
             }
             public static void SendStartEmbed(Engine engine, string action, Color color)
             {
-                SendEmbed(string.Format(action, engine.VersionString, engine.LocalUserName), color);
+                SendEmbed(string.Format(action, Engine.CurrentVersion, engine.LocalUserName), color);
             }
             public static void SendWorldEmbed(World world, string action, Color color)
             {

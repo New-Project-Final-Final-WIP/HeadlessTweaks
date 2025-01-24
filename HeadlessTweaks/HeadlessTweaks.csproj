@@ -4,7 +4,7 @@
 		<ModLoaderShort>rml</ModLoaderShort>
 
 		<Product>HeadlessTweaks</Product>
-		<Version>2.1.6</Version>
+		<Version>2.1.7</Version>
 
 		<Company>badhaloninja</Company>
 		<Copyright>Copyright © $(Company) 2025</Copyright>
@@ -33,6 +33,9 @@
 
 		<DebugSymbols Condition="'$(Configuration)'=='Release'">false</DebugSymbols>
 		<DebugType Condition="'$(Configuration)'=='Release'">None</DebugType>
+		
+		<!-- Include Nuget packages in output -->
+		<CopyLocalLockFileAssemblies Condition="'$(CopyDiscordToLib)'=='true'">true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -52,7 +55,7 @@
 		<HeadlessPath Condition="Exists('E:\Resonite\Headless\')">E:\Resonite\Headless\</HeadlessPath>
 		
 		<HeadlessData>$(HeadlessPath)</HeadlessData>
-		<HeadlessData Condition="Exists('$(HeadlessPath)\Windows\')">$(HeadlessPath)Windows\</HeadlessData>
+		<HeadlessData Condition="Exists('$(HeadlessPath)\Windows\Headless\')">$(HeadlessPath)Windows\Headless\</HeadlessData>
 
 		<HeadlessExecutableWindows>$(HeadlessPath)</HeadlessExecutableWindows>
 		<HeadlessExecutableLinux>$(HeadlessPath)</HeadlessExecutableLinux>
@@ -68,13 +71,6 @@
 	<ItemGroup>
 		<!-- Referencing Webhook will also reference Core and Rest -->
 		<PackageReference Include="Discord.Net.Webhook" Version="3.17.0" />
-		<!-- These packages are to make sure the Discord.Net packages don't force a lower version of the System binaries that the platform uses -->
-		<!-- Will probably need to manually update these -->
-		<!--<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
-		<PackageReference Include="System.Memory" Version="4.5.5" />
-		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
-		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
-		<PackageReference Include="System.Collections.Immutable" Version="8.0.0" />-->
 	</ItemGroup>
 
 	<ItemGroup>
@@ -118,19 +114,6 @@
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(HeadlessPath)\Newtonsoft.Json.dll</HintPath>
 		</Reference>
-
-		<!--<Reference Include="System.Buffers">
-			<HintPath>$(HeadlessPath)\System.Buffers.dll</HintPath>
-		</Reference>
-		<Reference Include="System.Collections.Immutable">
-			<HintPath>$(HeadlessPath)\System.Collections.Immutable.dll</HintPath>
-		</Reference>
-		<Reference Include="System.Numerics.Vectors">
-			<HintPath>$(HeadlessPath)\System.Numerics.Vectors.dll</HintPath>
-		</Reference>
-		<Reference Include="System.Threading.Tasks.Extensions">
-			<HintPath>$(HeadlessPath)\System.Threading.Tasks.Extensions.dll</HintPath>
-		</Reference>-->
 	</ItemGroup>
 
 
@@ -138,8 +121,7 @@
 		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)" />
 		<Message Text="Copied $(TargetFileName) to $(ModsPath)" Importance="high" />
 
-		<!--
 		<Copy SourceFiles="$(TargetDir)Discord.Net.Core.dll;$(TargetDir)Discord.Net.Rest.dll;$(TargetDir)Discord.Net.Webhook.dll;" DestinationFolder="$(ModLibrariesPath)" Condition="'$(CopyDiscordToLib)'=='true'" />
-		<Message Text="Copied Discord.Net libraries to $(ModLibrariesPath)" Importance="high" Condition="'$(CopyDiscordToLib)'=='true'" />-->
+		<Message Text="Copied Discord.Net libraries to $(ModLibrariesPath)" Importance="high" Condition="'$(CopyDiscordToLib)'=='true'" />
 	</Target>
 </Project>

@@ -26,31 +26,27 @@ namespace HeadlessTweaks
         {
             if (thumbnail == null) thumbnail = OfficialAssets.Graphics.Icons.Dash.Folder;
 
-            
 
             List<IItemThumbnailSource> componentsInChildren = slot.GetComponentsInChildren<IItemThumbnailSource>(
                 s => s.HasThumbnail && s.Slot.IsActive, true);
-            // Log if a component is found
-            //HeadlessTweaks.Msg("Found " + componentsInChildren.Count + " components in children of " + slot.Name);
 
             StaticTexture2D asset = null;
             if (componentsInChildren.Count == 0)
             {
                 HeadlessTweaks.Msg($"No thumbnail found in slot {slot.Name}, attaching thumbnail");
-                bool loaded = false;
+                
                 await slot.World.Coroutines.StartTask(async () =>
                 {
-                    await new ToWorld(); /// TODO: Check if ToWorld is needed here
-
                     asset = slot.World.AssetsSlot.AddSlot(slot.Name + "Thumbnail").AttachTexture(thumbnail);
                     var a = slot.AttachComponent<ItemTextureThumbnailSource>();
                     a.Texture.Target = asset;
 
                     await new NextUpdate();
-                    await new NextUpdate(); /// TODO: Check if this 2nd one is needed
-
-                    loaded = await asset.Asset.WaitForLoad();//Task.Delay(200);
+                    await new NextUpdate();
+                    await new ToBackground();
                 });
+                
+                bool loaded = await asset.RawAsset.WaitForLoad();
 
                 if (!loaded)
                 {
@@ -58,16 +54,13 @@ namespace HeadlessTweaks
                     await userMessages.SendTextMessage("Thumbnail failed to load, canceling as headlesses can't render thumbnails");
                     return false;
                 }
-                //HeadlessTweaks.Msg("Thumbnail Loaded");
+
             }
-/*
-            HeadlessTweaks.Msg("Sending object message...");
-            HeadlessTweaks.Msg($"Slot Exists: {slot != null}");
-            HeadlessTweaks.Msg($"UserMessages Exists: {userMessages != null}");*/
+
             var msgData = await userMessages.CreateObjectMessage(slot, true);
-            //HeadlessTweaks.Msg("Object message created?:" + msgData);
+
             await msgData.uploadTask;
-            //HeadlessTweaks.Msg("Object message uploaded?");
+
             var success = await userMessages.SendMessage(msgData.message);
 
             if (cleanUpSlot)
@@ -213,7 +206,7 @@ namespace HeadlessTweaks
         {
             if (asset == null)
                 return false;
-
+            
             while (true)
             {
                 if (asset == null || asset.LoadState == AssetLoadState.Failed) return false;

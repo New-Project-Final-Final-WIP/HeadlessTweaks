@@ -12,7 +12,7 @@ namespace HeadlessTweaks
     {
         public override string Name => "HeadlessTweaks";
         public override string Author => "New_Project_Final_Final_WIP";
-        public override string Version => "2.1.6";
+        public override string Version => "2.1.7";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isDiscordLoaded = false;
@@ -73,11 +73,6 @@ namespace HeadlessTweaks
         // Disable autosave if no one is in world
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<bool> SmartAutosaveEnabled = new("SmartAutosave", "Disable autosave if there are no users in current world", () => false);
-
-        /*// ConfigSaved 
-        [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<bool> configSaved = new("_configSaved", "_configSaved", internalAccessOnly: true);*/
-
 
 
 

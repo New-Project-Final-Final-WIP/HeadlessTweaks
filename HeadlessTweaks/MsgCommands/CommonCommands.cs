@@ -173,7 +173,7 @@ namespace HeadlessTweaks
 
             Invite:
                 // check if user can join world
-                if (!CanUserJoin(world, msg.SenderId))
+                if (!CanUserJoin(world, msg.SenderId, false))
                 {
                     _ = userMessages.SendTextMessage($"You can't join world \"{world.Name}\"");
                     return;
@@ -194,7 +194,7 @@ namespace HeadlessTweaks
                 if (world == null) return;
 
                 // check if user can join world
-                if (!CanUserJoin(world, msg.SenderId))
+                if (!CanUserJoin(world, msg.SenderId, false))
                 {
                     _ = userMessages.SendTextMessage($"You can't join world \"{world.Name}\"");
                     return;
@@ -217,7 +217,7 @@ namespace HeadlessTweaks
             {
                 var messages = new BatchMessageHelper(userMessages);
                 int num = 0;
-                foreach (World world1 in Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld && CanUserJoin(w, msg.SenderId)))
+                foreach (World world1 in Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld && CanUserJoin(w, msg.SenderId, false)))
                 {
                     messages.Add($"[{num}] {world1.Name} | {world1.ActiveUserCount} ({world1.UserCount}) | {world1.AccessLevel}", true);
                     ++num;
