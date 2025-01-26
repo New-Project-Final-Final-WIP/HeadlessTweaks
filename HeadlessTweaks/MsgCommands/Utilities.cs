@@ -152,7 +152,26 @@ namespace HeadlessTweaks
                 }
             }
 
-            _ = userMessages.SendTextMessage($"Starting world \"{startInfo.SessionName}\"");
+            string sessionName = startInfo.SessionName;
+
+            if (string.IsNullOrEmpty(sessionName))
+            {
+                if (startInfo.LoadWorldURL != null)
+                {
+                    sessionName = startInfo.LoadWorldURL;
+                }
+                else if (startInfo.LoadWorldPresetName != null)
+                {
+                    sessionName = startInfo.LoadWorldPresetName;
+                }
+                else
+                {
+                    sessionName = "Unknown Name";
+                }
+            }
+
+
+            _ = userMessages.SendTextMessage($"Starting world \"{sessionName}\"");
 
             var newWorld = new FrooxEngine.Headless.WorldHandler(handler.Engine, handler.Config, startInfo);
             try
@@ -161,13 +180,13 @@ namespace HeadlessTweaks
             }
             catch (Exception ex)
             {
-                HeadlessTweaks.Error($"Error starting world {startInfo.SessionName}:\n\t{ex}");
+                HeadlessTweaks.Error($"Error starting world {sessionName}:\n\t{ex}");
             }
 
             // Error starting world 
             if (newWorld.CurrentInstance == null)
             {
-                _ = userMessages.SendTextMessage($"Problem starting world \"{startInfo.SessionName}\"");
+                _ = userMessages.SendTextMessage($"Problem starting world \"{sessionName}\"");
                 return null;
             }
 
@@ -187,7 +206,7 @@ namespace HeadlessTweaks
             await world.Coroutines.StartTask(async () =>
             {
                 await new NextUpdate();
-                Slot slot = world.RootSlot.AddSlot("SpawnedItem");
+                Slot slot = world.RootSlot.AddLocalSlot("SpawnedItem");
                 await slot.LoadObjectAsync(new Uri(objectUri));
                 slot = slot.UnpackInventoryItem(true);
 
@@ -203,9 +222,9 @@ namespace HeadlessTweaks
                     return;
                 }
 
-                Uri url = orb.URL;
-
-                _ = userMessages.SendTextMessage($"Found world \"{slot.Name}\" from sent orb");
+                url = orb.URL;
+                string name = orb.WorldName ?? slot.Name;
+                _ = userMessages.SendTextMessage($"Found world \"{name}\" from sent orb");
                 slot.Destroy();
             });
 

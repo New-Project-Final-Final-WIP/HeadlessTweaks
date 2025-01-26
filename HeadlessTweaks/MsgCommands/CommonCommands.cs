@@ -144,18 +144,18 @@ namespace HeadlessTweaks
                 {
                     world = Engine.Current.WorldManager.FocusedWorld;
                     goto Invite;
-
                 }
 
                 string worldName = string.Join(" ", args).Trim();
 
                 var worlds = Engine.Current.WorldManager.Worlds.Where(w => w != Userspace.UserspaceWorld);
 
-                world = worlds.Where(w => w.RawName == worldName || w.SessionId == worldName).FirstOrDefault();
+                world = worlds.Where(w => w.RawName == worldName || w.Name == worldName || w.SessionId == worldName).FirstOrDefault();
                 if (world == null)
                 {
+                    // Prioritize index over partial search
                     if (int.TryParse(worldName, out var result))
-                    {
+                    { // Do an index match
                         var worldList = worlds.ToList();
                         if (result < 0 || result >= worldList.Count)
                         {
@@ -165,13 +165,19 @@ namespace HeadlessTweaks
                         world = worldList[result];
                     }
                     else
-                    {
-                        _ = userMessages.SendTextMessage($"No world found with the name \"{world.Name}\"");
-                        return;
+                    { // Do a partial match
+                        // Todo maybe sort matches to the closest match?
+                        world = worlds.Where(w => w.RawName.Contains(worldName, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
                     }
                 }
 
+                if (world == null)
+                {
+                    _ = userMessages.SendTextMessage($"No world found with the name \"{worldName}\"");
+                    return;
+                }
             Invite:
+
                 // check if user can join world
                 if (!CanUserJoin(world, msg.SenderId, false))
                 {
