@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using FrooxEngine;
-using HarmonyLib;
 using SkyFrost.Base;
 using Elements.Core;
 
@@ -22,11 +21,18 @@ namespace HeadlessTweaks
 
         internal static void Init()
         {
+            RegisterCommands(typeof(Commands));
+
+            Engine.Current.RunPostInit(HookIntoMessages);
+        }
+
+        public static void RegisterCommands(Type type)
+        {
             // Fetch all the methods that are marked with the Command attribute in the Commands class
             // Store them in a dictionay with the lowercase command name as the key
 
             // Get all methods under Commands that have the CommandAttribute
-            var cmdMethods = typeof(Commands).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.GetCustomAttributes<CommandAttribute>().Any());
+            var cmdMethods = type.GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.GetCustomAttributes<CommandAttribute>().Any());
 
             // Loop through all the methods and add them to the dictionary
             foreach (var method in cmdMethods)
@@ -34,16 +40,14 @@ namespace HeadlessTweaks
                 var attribute = method.GetCustomAttribute<CommandAttribute>();
                 var cmdName = attribute.Name.ToLower();
 
-                _RegisteredCommands.Add(cmdName, method);
+                _RegisteredCommands.TryAdd(cmdName, method);
 
                 // Add all the aliases to the dictionary
                 foreach (var alias in attribute.Aliases)
                 {
-                    _RegisteredCommands.Add(alias.ToLower(), method);
+                    _RegisteredCommands.TryAdd(alias.ToLower(), method);
                 }
             }
-
-            Engine.Current.RunPostInit(HookIntoMessages);
         }
 
         private static void HookIntoMessages()
@@ -138,6 +142,5 @@ namespace HeadlessTweaks
                     return;
             }
         }
-
     }
 }

@@ -62,7 +62,7 @@ namespace HeadlessTweaks
                 HeadlessTweaks.Error("Webhook Key or Id is not defined in config");
                 return;
             }
-            
+
             DiscordWebhook = new DiscordWebhookClient("https://discord.com/api/webhooks/" + HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookID) + "/" + HeadlessTweaks.config.GetValue(HeadlessTweaks.DiscordWebhookKey));
 
             var startSession = typeof(World).GetMethod("StartSession");
@@ -75,7 +75,10 @@ namespace HeadlessTweaks
             harmony.Patch(saveWorld, postfix: new HarmonyMethod(method: savePostfix));
             Engine.Current.OnShutdown += HeadlessEvents.HeadlessShutdown; // OnShutdownRequest
 
-            Engine.Current.RunPostInit(HeadlessEvents.HeadlessStartup);
+            Engine.Current.RunPostInit(() => {
+                HeadlessEvents.HeadlessStartup();
+                Engine.Current.WorldManager.WorldFailed += HeadlessEvents.WorldCrashed;
+            });
 
         }
         [HarmonyPatch(typeof(World), "SaveWorld")]
@@ -103,7 +106,7 @@ namespace HeadlessTweaks
             public static void WorldCreated(World world)
             {
                 if (!EventHelper.IsEnabled(DiscordEvents.WorldCreated)) return;
-                DiscordHelper.SendWorldEmbed(world, "Started", EventHelper.GetColor(DiscordEvents.WorldCreated));
+                DiscordHelper.SendWorldEmbed(world, "Started", EventHelper.GetColor(DiscordEvents.WorldCreated), true);
                 return;
             }
             public static void WorldSaved(World world)
@@ -116,6 +119,12 @@ namespace HeadlessTweaks
             {
                 if (!EventHelper.IsEnabled(DiscordEvents.WorldDestroyed)) return;
                 DiscordHelper.SendWorldEmbed(world, "Closing", EventHelper.GetColor(DiscordEvents.WorldDestroyed));
+                return;
+            }
+            public static void WorldCrashed(World world)
+            {
+                if (!EventHelper.IsEnabled(DiscordEvents.WorldCrashed)) return;
+                DiscordHelper.SendWorldEmbed(world, "World Crashed", EventHelper.GetColor(DiscordEvents.WorldCrashed));
                 return;
             }
             public static void UserJoined(User user)
@@ -161,7 +170,6 @@ namespace HeadlessTweaks
                 }
             }
 
-
             public static void SendEmbed(string message, Elements.Core.colorX color)
             {
                 SendEmbed(message, new Color(color.r, color.g, color.b));
@@ -171,11 +179,11 @@ namespace HeadlessTweaks
             public static async void SendEmbed(string message, Color color)
             {
                 List<Embed> embedList = [];
-                var embed = new EmbedBuilder
-                {
-                    Description = message,
-                    Color = color
-                };
+
+                var embed = new EmbedBuilder()
+                                .WithDescription(message)
+                                .WithColor(color);
+
                 embedList.Add(embed.Build());
                 try
                 {
@@ -190,7 +198,7 @@ namespace HeadlessTweaks
             {
                 SendEmbed(string.Format(action, Engine.CurrentVersion, engine.LocalUserName), color);
             }
-            public static void SendWorldEmbed(World world, string action, Color color)
+            public static void SendWorldEmbed(World world, string action, Color color, bool linkToSession = false)
             {
                 string SessionName = world.RawName;
                 // TODO Make this configurable 
@@ -199,7 +207,17 @@ namespace HeadlessTweaks
                 {
                     SessionName = value;
                 }
-                SendEmbed(string.Format("{0} [{1}] {2}", SessionName, world.HostUser.UserName, action), color);
+
+                string message = string.Format("{0} [{1}] {2}", SessionName, world.HostUser.UserName, action);
+
+                if (linkToSession && HeadlessTweaks.DiscordLinkToSession.GetValue()) {
+                    // Components require Application owned webhooks, do able but don't feel like it right now
+                    /*var builder = new ComponentBuilder().WithButton("Open Session", style: ButtonStyle.Link, url: Engine.Current.Cloud.ApiEndpoint + "/open/session/" + world.SessionId);
+                    component = builder.Build();*/
+
+                    message += $"\n-# [Join Session](<{Engine.Current.Cloud.ApiEndpoint + "/open/session/" + world.SessionId}>)";
+                }
+                SendEmbed(message, color);
             }
             public static async void SendUserEmbed(User user, string action, Color color, string userNameOverride = null, string userIdOverride = null)
             {
@@ -269,6 +287,7 @@ namespace HeadlessTweaks
                 { DiscordEvents.WorldCreated, FromColorX(RadiantUI_Constants.Hero.CYAN) },
                 { DiscordEvents.WorldSaved, FromColorX(RadiantUI_Constants.Hero.YELLOW) },
                 { DiscordEvents.WorldDestroyed, FromColorX(RadiantUI_Constants.Hero.ORANGE) },
+                { DiscordEvents.WorldCrashed, FromColorX(RadiantUI_Constants.Hero.RED) },
                 { DiscordEvents.UserJoin, FromColorX(RadiantUI_Constants.Hero.GREEN) },
                 { DiscordEvents.UserLeft, FromColorX(RadiantUI_Constants.Hero.RED) },
             };
@@ -303,6 +322,7 @@ namespace HeadlessTweaks
             WorldCreated,
             WorldSaved,
             WorldDestroyed,
+            WorldCrashed,
 
             UserJoin,
             UserLeft,

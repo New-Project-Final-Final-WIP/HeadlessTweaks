@@ -4,9 +4,9 @@
 		<ModLoaderShort>rml</ModLoaderShort>
 
 		<Product>HeadlessTweaks</Product>
-		<Version>2.1.7</Version>
+		<Version>2.1.8</Version>
 
-		<Company>badhaloninja</Company>
+		<Company>New_Project_Final_Final_WIP</Company>
 		<Copyright>Copyright © $(Company) 2025</Copyright>
 
 		<Authors>$(Company)</Authors>
@@ -27,20 +27,20 @@
 	</PropertyGroup>
 	
 	<PropertyGroup>
-		<CopyLocal>false</CopyLocal>
-		<CopyToMods Condition="'$(CopyToMods)'==''">true</CopyToMods>
-		<CopyDiscordToLib Condition="'$(CopyToMods)'=='true'">true</CopyDiscordToLib>
+		<CopyToMods>true</CopyToMods>
+		<CopyDiscordToLib>true</CopyDiscordToLib>
 
 		<DebugSymbols Condition="'$(Configuration)'=='Release'">false</DebugSymbols>
 		<DebugType Condition="'$(Configuration)'=='Release'">None</DebugType>
 		
 		<!-- Include Nuget packages in output -->
-		<CopyLocalLockFileAssemblies Condition="'$(CopyDiscordToLib)'=='true'">true</CopyLocalLockFileAssemblies>
+		<CopyLocalLockFileAssemblies Condition="$(CopyDiscordToLib) And $(CopyToMods)">true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="..\README.md" Link="README.md" />
-		<None Include="..\LICENCE" Link="LICENCE" />
+		<None Include="..\LICENCE"/>
+		<None Include="..\README.md"/>
+		<None Include="..\CommandList.md"/>
 	</ItemGroup>
 
 	<PropertyGroup>
@@ -48,7 +48,7 @@
 		<AppPath Condition="Exists('F:\Windows\')">F:\Windows\</AppPath>
 		<AppPath Condition="Exists('E:\SteamLibrary\steamapps\common\$(AppName)')">E:\SteamLibrary\steamapps\common\$(AppName)\</AppPath>
 		<AppPath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\$(AppName)\')">C:\Program Files (x86)\Steam\steamapps\common\$(AppName)\</AppPath>
-
+		
 		<HeadlessPath>$(MSBuildThisFileDirectory)$(AppName)\Headless\</HeadlessPath>
 		<HeadlessPath Condition="Exists('$(AppPath)Headless\')">$(AppPath)Headless\</HeadlessPath>
 		<HeadlessPath Condition="Exists('$(AppPath)Tools\Headless\')">$(AppPath)Tools\Headless\</HeadlessPath>
@@ -56,13 +56,10 @@
 		
 		<HeadlessData>$(HeadlessPath)</HeadlessData>
 		<HeadlessData Condition="Exists('$(HeadlessPath)\Windows\Headless\')">$(HeadlessPath)Windows\Headless\</HeadlessData>
-
-		<HeadlessExecutableWindows>$(HeadlessPath)</HeadlessExecutableWindows>
-		<HeadlessExecutableLinux>$(HeadlessPath)</HeadlessExecutableLinux>
-
-		<HeadlessExecutableWindows Condition="Exists('$(HeadlessPath)\Windows\')">$(HeadlessPath)Windows\Headless\</HeadlessExecutableWindows>
-		<HeadlessExecutableLinux Condition="Exists('$(HeadlessPath)\Linux\')">Linux/Headless/</HeadlessExecutableLinux>
-
+		<HeadlessData Condition="Exists('$(HeadlessPath)\Resonite\Headless\')">$(HeadlessPath)Resonite/Headless/</HeadlessData>
+		
+		<!-- Relative path to executable from HeadlessPath -->
+		<HeadlessExecutableDir Condition="Exists('$(HeadlessPath)\Resonite\')">Resonite/Headless/</HeadlessExecutableDir>
 
 		<ModLibrariesPath>$(HeadlessPath)$(ModLoaderShort)_libs\</ModLibrariesPath>
 		<ModsPath>$(HeadlessPath)$(ModLoaderShort)_mods\</ModsPath>
@@ -70,14 +67,21 @@
 
 	<ItemGroup>
 		<!-- Referencing Webhook will also reference Core and Rest -->
-		<PackageReference Include="Discord.Net.Webhook" Version="3.17.0" />
+		<PackageReference Include="Discord.Net.Webhook" Version="3.17.0"/>
 	</ItemGroup>
 
+	<ItemDefinitionGroup>
+		<!-- Exclude Reference Assemblies from output -->
+		<Reference>
+			<Private>false</Private>
+		</Reference>
+	</ItemDefinitionGroup>
+	
 	<ItemGroup>
 		<Reference Include="HarmonyLib">
-			<HintPath>$(HeadlessPath)$(ModLoaderShort)_libs\0Harmony.dll</HintPath>
+			<HintPath>$(ModLibrariesPath)0Harmony.dll</HintPath>
 			<HintPath Condition="Exists('$(HeadlessPath)0Harmony.dll')">$(HeadlessPath)0Harmony.dll</HintPath>
-			<HintPath Condition="Exists('$(HeadlessPath)$(ModLoaderShort)_libs\0Harmony-Net8.dll')">$(HeadlessPath)$(ModLoaderShort)_libs\0Harmony-Net8.dll</HintPath>
+			<HintPath Condition="Exists('$(ModLibrariesPath)0Harmony-Net8.dll')">$(ModLibrariesPath)0Harmony-Net8.dll</HintPath>
 		</Reference>
 		<Reference Include="Elements.Core">
 			<HintPath>$(HeadlessData)Elements.Core.dll</HintPath>
@@ -110,18 +114,21 @@
 			<HintPath>$(HeadlessPath)$(AppName)ModLoader.dll</HintPath>
 			<HintPath Condition="Exists('$(HeadlessPath)Libraries\$(AppName)ModLoader.dll')">$(HeadlessPath)Libraries\$(AppName)ModLoader.dll</HintPath>
 		</Reference>
-
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(HeadlessPath)\Newtonsoft.Json.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 
-
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(CopyToMods)'=='true'">
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$(CopyToMods)">
 		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)" />
 		<Message Text="Copied $(TargetFileName) to $(ModsPath)" Importance="high" />
+	</Target>
 
-		<Copy SourceFiles="$(TargetDir)Discord.Net.Core.dll;$(TargetDir)Discord.Net.Rest.dll;$(TargetDir)Discord.Net.Webhook.dll;" DestinationFolder="$(ModLibrariesPath)" Condition="'$(CopyDiscordToLib)'=='true'" />
-		<Message Text="Copied Discord.Net libraries to $(ModLibrariesPath)" Importance="high" Condition="'$(CopyDiscordToLib)'=='true'" />
+	<Target Name="CopyDiscordLibs" AfterTargets="PostBuild" Condition="$(CopyDiscordToLib) And $(CopyToMods)">
+		<ItemGroup>
+			<DiscordLibraries Include="$(TargetDir)Discord.Net.*.dll" />
+		</ItemGroup>
+		<Copy SourceFiles="@(DiscordLibraries)" DestinationFolder="$(ModLibrariesPath)" SkipUnchangedFiles="true" />
+		<Message Text="Copied DiscordNet Libraries to $(ModLibrariesPath)" Importance="high" />
 	</Target>
 </Project>

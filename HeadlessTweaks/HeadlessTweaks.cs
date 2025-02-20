@@ -12,7 +12,7 @@ namespace HeadlessTweaks
     {
         public override string Name => "HeadlessTweaks";
         public override string Author => "New_Project_Final_Final_WIP";
-        public override string Version => "2.1.7";
+        public override string Version => "2.1.8";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isDiscordLoaded = false;
@@ -42,6 +42,8 @@ namespace HeadlessTweaks
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<Dictionary<DiscordIntegration.DiscordEvents, colorX>> DiscordWebhookEventColors = new("DiscordWebhookEventColors", "Discord webhook event colors", () => []);
 
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<bool> DiscordLinkToSession = new("DiscordLinkToSession", "Link to go.resonite.com on session start discord message", () => true);
 
 
         [AutoRegisterConfigKey]
