@@ -41,12 +41,13 @@ You have the option to enable Discord integration for a Discord channel. A varie
 
 You can set `UseDiscordWebhook` to `true` in your config to enable these features. The options are as follows:
 
-- `UseDiscordWebhook` - set to `true` to enable Discord integration features
+- `UseDiscordWebhook` - Set to `true` to enable Discord integration features
 - `DiscordWebhookID` - Webhook ID taken from a Discord channel WebHook integration URL (`https://discord.com/api/webhooks/WEBHOOK_ID_HERE/`)
 - `DiscordWebhookKey` - Webhook Key taken from a Discord channel WebHook integration URL (`https://discord.com/api/webhooks/WEBHOOK_ID_HERE/WEBHOOK_KEY_HERE`)
 - `DiscordWebhookUsername` - Display name that will be attached to messages sent by this integration
 - `DiscordWebhookAvatar` - HTTP or RESDB URL to Avatar/PFP image that will be attached to messages sent by this integration
 - `DiscordWebhookThreadID` - The ID of a thread in the channel the Webhook is from to only send headless messages to that thread - Can be left unset
+- `DiscordLinkToSession` - Set to `true` to add a link to open the session in the Session Started event message
 
 ### Auto Invitation Opt-Out
 It's useful to auto-invite users when a headless spins up. However this can get kind of spammy. Users can opt-out of auto-invites with the `/optOut` chat command or by have their name manually entered in the `AutoInviteOptOut` list. The list simply takes user IDs. For example:
