@@ -6,7 +6,6 @@ using SkyFrost.Base;
 using Elements.Core;
 using ResoniteModLoader;
 using System.Timers;
-using FrooxEngine.Store;
 
 namespace HeadlessTweaks
 {
@@ -72,6 +71,33 @@ namespace HeadlessTweaks
                 });
             }
             return success;
+        }
+
+        // A modified version of InviteRequestManager.ForwardToAdmins
+        public static async Task ForwardInviteRequestToAdmins(this UserMessages userMessages, InviteRequest inviteRequest, World world)
+        {
+            HashSet<string> inviteHandlerUsers = world.GetInviteHandlerUsers();
+            inviteHandlerUsers.RemoveWhere(u =>
+            {
+                if (userMessages.Cloud.Contacts.IsContact(u))
+                    return false;
+                HeadlessTweaks.Warn("User " + u + " is admin of the session " + world.Name + ", but is not contact with the host. Cannot forward invite request.");
+                return true;
+            });
+            if (inviteHandlerUsers.Count == 0)
+            {
+                await userMessages.SendTextMessage("There are currently no admins available to handle this invite request.");
+            }
+            else
+            {
+                bool isContactOfHost = userMessages.Cloud.Contacts.IsContact(inviteRequest.UserIdToInvite);
+
+                var sessionRequest = inviteRequest.Clone();
+                sessionRequest.ForSessionId = world.SessionId;
+                sessionRequest.ForSessionName = world.Name;
+
+                await world.Engine.Cloud.InviteRequests.ForwardInviteRequest(sessionRequest, isContactOfHost, [.. inviteHandlerUsers]);
+            }
         }
 
         // World.GetOrb(bool sessionOrb)

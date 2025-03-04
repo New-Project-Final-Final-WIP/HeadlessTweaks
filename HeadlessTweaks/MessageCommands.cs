@@ -55,7 +55,7 @@ namespace HeadlessTweaks
             Engine.Current.Cloud.Messages.OnMessageReceived += OnMessageReceived;
         }
 
-        private static async void OnMessageReceived(Message msg)
+        private static async void OnMessageReceived(Message message)
         {
             if (Engine.Current.Cloud.HubClient == null) return;
 
@@ -64,33 +64,34 @@ namespace HeadlessTweaks
             {
                 await Engine.Current.Cloud.HubClient.MarkMessagesRead(new MarkReadBatch()
                 {
-                    SenderId = Engine.Current.Cloud.Messages.SendReadNotification ? msg.SenderId : null,
-                    Ids = [msg.Id],
+                    SenderId = Engine.Current.Cloud.Messages.SendReadNotification ? message.SenderId : null,
+                    Ids = [message.Id],
                     ReadTime = DateTime.UtcNow
                 });
             } catch (Exception ex)
             {
                 // Ran into an error at one point, keeping this here to log more information if it shows again
-                Error($"Marking a message has cause an error!\n\tMessage: {msg}, Content: {msg.Content}\n\tException: {ex}");
+                Error($"Marking a message has cause an error!\n\tMessage: {message}, Content: {message.Content}\n\tException: {ex}");
                 return;
             }
 
-            var userMessages = GetUserMessages(msg.SenderId);
+            var userMessages = GetUserMessages(message.SenderId);
             // check if userMessages is in the response tasks dictionary
             // if it is, set the message and remove it from the dictionary
             // if it isn't, do nothing
             if (responseTasks.TryGetValue(userMessages, out TaskCompletionSource<Message> responseTask))
             {
                 responseTasks.Remove(userMessages); // Remove before setting the result to allow multiple response requests to be handled for the same message
-                responseTask.TrySetResult(msg);
+                responseTask.TrySetResult(message);
                 return;
             }
-            switch (msg.MessageType)
+            
+            switch (message.MessageType)
             {
                 case SkyFrost.Base.MessageType.Text:
-                    if (msg.Content.StartsWith('/'))
+                    if (message.Content.StartsWith('/'))
                     {
-                        var args = StringHelper.ParseArguments(msg.Content);
+                        var args = StringHelper.ParseArguments(message.Content);
                         var cmd = args[0][1..].ToLower();
                         var cmdArgs = args.Skip(1).ToArray();
 
@@ -103,12 +104,12 @@ namespace HeadlessTweaks
                         if (cmdMethod == null || cmdAttr == null)
                         {
                             _ = userMessages.SendTextMessage("Unknown command");
-                            return;
+                            break;
                         }
-                        if (cmdAttr.PermissionLevel > GetUserPermissionLevel(msg.SenderId))
+                        if (cmdAttr.PermissionLevel > GetUserPermissionLevel(message.SenderId))
                         {
                             _ = userMessages.SendTextMessage("You do not have permission to use that command.");
-                            return;
+                            break;
                         }
 
                         Msg("Executing command: " + cmd);
@@ -123,23 +124,50 @@ namespace HeadlessTweaks
                               // Also good thing to note, apparently you can't catch exceptions from async void methods, so we have to define these as async Task
                               // https://docs.microsoft.com/en-us/archive/msdn-magazine/2013/march/async-await-best-practices-in-asynchronous-programming#avoid-async-void
 
-                                await (Task)cmdMethod.Invoke(null, [userMessages, msg, cmdArgs]);
+                                await (Task)cmdMethod.Invoke(null, [userMessages, message, cmdArgs]);
                             }
                             else
                             {
                                 var cmdDelegate = (MessageCommandAction)Delegate.CreateDelegate(typeof(MessageCommandAction), cmdMethod);
-                                cmdDelegate(userMessages, msg, cmdArgs);
+                                cmdDelegate(userMessages, message, cmdArgs);
                             }
                         }
                         catch (Exception e)
                         {
-                            Error($"Failed to execute command from {msg.SenderId}: " + cmd, e);
+                            Error($"Failed to execute command from {message.SenderId}: " + cmd, e);
                             _ = userMessages.SendTextMessage("Error: " + e.Message);
                         }
                     }
-                    return;
-                default:
-                    return;
+                    break;
+                case SkyFrost.Base.MessageType.InviteRequest:
+                    if (!HeadlessTweaks.AutoHandleInviteRequests.GetValue())
+                        break;
+
+                    var inviteRequest = message.ExtractContent<InviteRequest>();
+
+                    // Skip if it was forwarded to the headless for a specific world
+                    if (inviteRequest.ForSessionId != null)
+                        break;
+
+                    // Only continue if the sender is the requester
+                    if (message.SenderId != inviteRequest.UserIdToInvite)
+                        break;
+
+                    var world = Engine.Current.WorldManager.FocusedWorld;
+
+                    Msg($"Handling invite request from {inviteRequest.UsernameToInvite}");
+
+                    // check if user can join world
+                    if (CanUserJoin(world, inviteRequest.UserIdToInvite, true))
+                    {
+                        world.AllowUserToJoin(inviteRequest.UserIdToInvite);
+                        await userMessages.SendInviteMessage(world.GenerateSessionInfo());
+                    } else
+                    {
+                        Msg($"User is not allowed to join {world.RawName}, forwarding to admins in the world");
+                        await userMessages.ForwardInviteRequestToAdmins(inviteRequest, world);
+                    }
+                    break;
             }
         }
     }

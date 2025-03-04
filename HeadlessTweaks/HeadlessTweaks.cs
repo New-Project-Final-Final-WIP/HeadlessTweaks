@@ -3,7 +3,6 @@ using ResoniteModLoader;
 using System;
 using System.Collections.Generic;
 using SkyFrost.Base;
-using System.Runtime.InteropServices;
 using Elements.Core;
 
 namespace HeadlessTweaks
@@ -12,7 +11,7 @@ namespace HeadlessTweaks
     {
         public override string Name => "HeadlessTweaks";
         public override string Author => "New_Project_Final_Final_WIP";
-        public override string Version => "2.1.8";
+        public override string Version => "2.1.9";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isDiscordLoaded = false;
@@ -43,7 +42,7 @@ namespace HeadlessTweaks
         public static readonly ModConfigurationKey<Dictionary<DiscordIntegration.DiscordEvents, colorX>> DiscordWebhookEventColors = new("DiscordWebhookEventColors", "Discord webhook event colors", () => []);
 
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<bool> DiscordLinkToSession = new("DiscordLinkToSession", "Link to go.resonite.com on session start discord message", () => true);
+        public static readonly ModConfigurationKey<bool> DiscordLinkToSession = new("DiscordLinkToSession", "Add a link to open the session in the discord session started message", () => true);
 
 
         [AutoRegisterConfigKey]
@@ -76,7 +75,8 @@ namespace HeadlessTweaks
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<bool> SmartAutosaveEnabled = new("SmartAutosave", "Disable autosave if there are no users in current world", () => false);
 
-
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<bool> AutoHandleInviteRequests = new("AutoHandleInviteRequests", "Allow headless tweaks automatically handle direct invite requests based on the same rules as reqInvite", () => true);
 
         public override void OnEngineInit()
         {
@@ -91,15 +91,7 @@ namespace HeadlessTweaks
             // and we can init the Discord client
             if (config.GetValue(UseDiscordWebhook))
             {
-
-                var typeString = "Discord.Webhook.DiscordWebhookClient, Discord.Net.Webhook";
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                { // Windows for some reason requires the full identifier for discord.webhook but not for headless
-                    typeString += ", Version = 3.12.0.0, Culture = neutral, PublicKeyToken = null";
-                }
-
-                Msg(typeString);
-                isDiscordLoaded = Type.GetType(typeString) != null;
+                isDiscordLoaded = Type.GetType("Discord.Webhook.DiscordWebhookClient, Discord.Net.Webhook") != null;
 
                 if (isDiscordLoaded) {
                     Msg("Discord.NET library found");

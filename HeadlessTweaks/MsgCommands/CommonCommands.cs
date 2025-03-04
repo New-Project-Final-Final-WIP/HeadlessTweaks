@@ -181,7 +181,7 @@ namespace HeadlessTweaks
                 // check if user can join world
                 if (!CanUserJoin(world, msg.SenderId, false))
                 {
-                    _ = userMessages.SendTextMessage($"You can't join world \"{world.Name}\"");
+                    _ = userMessages.SendTextMessage($"You can't join this world");
                     return;
                 }
                 world.AllowUserToJoin(msg.SenderId);
