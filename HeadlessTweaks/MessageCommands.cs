@@ -160,6 +160,7 @@ namespace HeadlessTweaks
                     // check if user can join world
                     if (CanUserJoin(world, inviteRequest.UserIdToInvite, true))
                     {
+                        // Should probably change to await userMessages.CreateInviteMessage(world);
                         world.AllowUserToJoin(inviteRequest.UserIdToInvite);
                         await userMessages.SendInviteMessage(world.GenerateSessionInfo());
                     } else

@@ -190,8 +190,9 @@ namespace HeadlessTweaks
                 return null;
             }
 
-            newWorld.CurrentInstance.AllowUserToJoin(userMessages.UserId);
-            _ = userMessages.SendInviteMessage(newWorld.CurrentInstance.GenerateSessionInfo());
+            //newWorld.CurrentInstance.AllowUserToJoin(userMessages.UserId);
+            var inviteMessage = await userMessages.CreateInviteMessage(newWorld.CurrentInstance);
+            _ = userMessages.SendMessage(inviteMessage);
             return newWorld.CurrentInstance;
         }
 

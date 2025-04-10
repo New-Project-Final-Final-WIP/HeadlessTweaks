@@ -11,7 +11,7 @@ namespace HeadlessTweaks
     {
         public override string Name => "HeadlessTweaks";
         public override string Author => "New_Project_Final_Final_WIP";
-        public override string Version => "2.1.9";
+        public override string Version => "2.1.10";
         public override string Link => "https://github.com/New-Project-Final-Final-WIP/HeadlessTweaks";
 
         public static bool isDiscordLoaded = false;
