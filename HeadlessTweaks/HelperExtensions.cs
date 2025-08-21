@@ -6,6 +6,7 @@ using SkyFrost.Base;
 using Elements.Core;
 using ResoniteModLoader;
 using System.Timers;
+using Renderite.Shared;
 
 namespace HeadlessTweaks
 {
