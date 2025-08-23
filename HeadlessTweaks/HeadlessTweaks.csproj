@@ -62,7 +62,6 @@
 		<HeadlessExecutableDir Condition="Exists('$(HeadlessPath)\Resonite\')">Resonite/Headless/</HeadlessExecutableDir>
 
 		<ModLibrariesPath>$(HeadlessPath)$(ModLoaderShort)_libs\</ModLibrariesPath>
-		<RootModLibrariesPath>$(AppPath)$(ModLoaderShort)_libs\</RootModLibrariesPath>
 		<ModsPath>$(HeadlessPath)$(ModLoaderShort)_mods\</ModsPath>
 	</PropertyGroup>
 
@@ -82,8 +81,6 @@
 		<Reference Include="HarmonyLib">
 			<HintPath>$(ModLibrariesPath)0Harmony.dll</HintPath>
 			<HintPath Condition="Exists('$(HeadlessPath)0Harmony.dll')">$(HeadlessPath)0Harmony.dll</HintPath>
-			<HintPath Condition="Exists('$(ModLibrariesPath)0Harmony.dll')">$(ModLibrariesPath)0Harmony.dll</HintPath>
-			<HintPath Condition="Exists('$(RootModLibrariesPath)0Harmony.dll')">$(RootModLibrariesPath)0Harmony.dll</HintPath>
 		</Reference>
 		<Reference Include="Elements.Core">
 			<HintPath>$(HeadlessData)Elements.Core.dll</HintPath>
