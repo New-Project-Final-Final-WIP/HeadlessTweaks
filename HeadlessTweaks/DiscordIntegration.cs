@@ -4,6 +4,7 @@ using System;
 using Discord;
 using System.Collections.Generic;
 using Discord.Webhook;
+using Renderite.Shared;
 
 namespace HeadlessTweaks
 {
@@ -307,7 +308,7 @@ namespace HeadlessTweaks
 
             private static Color FromColorX(Elements.Core.colorX color)
             {
-                var srgb = color.ToProfile(Elements.Core.ColorProfile.sRGB);
+                var srgb = color.ToProfile(Renderite.Shared.ColorProfile.sRGB);
                 return new Color(srgb.r, srgb.g, srgb.b);
             }
         }

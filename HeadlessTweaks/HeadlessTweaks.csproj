@@ -4,7 +4,7 @@
 		<ModLoaderShort>rml</ModLoaderShort>
 
 		<Product>HeadlessTweaks</Product>
-		<Version>2.1.10</Version>
+		<Version>2.1.11</Version>
 
 		<Company>New_Project_Final_Final_WIP</Company>
 		<Copyright>Copyright © $(Company) 2025</Copyright>
@@ -67,7 +67,7 @@
 
 	<ItemGroup>
 		<!-- Referencing Webhook will also reference Core and Rest -->
-		<PackageReference Include="Discord.Net.Webhook" Version="3.17.0"/>
+		<PackageReference Include="Discord.Net.Webhook" Version="3.18.0"/>
 	</ItemGroup>
 
 	<ItemDefinitionGroup>
@@ -81,7 +81,6 @@
 		<Reference Include="HarmonyLib">
 			<HintPath>$(ModLibrariesPath)0Harmony.dll</HintPath>
 			<HintPath Condition="Exists('$(HeadlessPath)0Harmony.dll')">$(HeadlessPath)0Harmony.dll</HintPath>
-			<HintPath Condition="Exists('$(ModLibrariesPath)0Harmony-Net8.dll')">$(ModLibrariesPath)0Harmony-Net8.dll</HintPath>
 		</Reference>
 		<Reference Include="Elements.Core">
 			<HintPath>$(HeadlessData)Elements.Core.dll</HintPath>
@@ -104,6 +103,9 @@
 		<Reference Include="Elements.Quantity">
 			<HintPath>$(HeadlessData)Elements.Quantity.dll</HintPath>
 		</Reference>
+		<Reference Include="Renderite.Shared">
+			<HintPath>$(HeadlessData)Renderite.Shared.dll</HintPath>
+		</Reference>
 		<Reference Include="$(AppName)">
 			<HintPath>$(HeadlessPath)\$(AppName).exe</HintPath>
 			<HintPath Condition="Exists('$(HeadlessData)\$(AppName).exe')">$(HeadlessData)\$(AppName).exe</HintPath>
@@ -113,6 +115,7 @@
 		<Reference Include="$(AppName)ModLoader">
 			<HintPath>$(HeadlessPath)$(AppName)ModLoader.dll</HintPath>
 			<HintPath Condition="Exists('$(HeadlessPath)Libraries\$(AppName)ModLoader.dll')">$(HeadlessPath)Libraries\$(AppName)ModLoader.dll</HintPath>
+			<HintPath Condition="Exists('$(AppPath)Libraries\$(AppName)ModLoader.dll')">$(AppPath)Libraries\$(AppName)ModLoader.dll</HintPath>
 		</Reference>
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(HeadlessPath)\Newtonsoft.Json.dll</HintPath>
