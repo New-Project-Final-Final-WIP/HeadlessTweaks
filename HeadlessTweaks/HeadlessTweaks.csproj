@@ -4,7 +4,7 @@
 		<ModLoaderShort>rml</ModLoaderShort>
 
 		<Product>HeadlessTweaks</Product>
-		<Version>2.1.11</Version>
+		<Version>2.1.12</Version>
 
 		<Company>New_Project_Final_Final_WIP</Company>
 		<Copyright>Copyright © $(Company) 2025</Copyright>
@@ -20,7 +20,7 @@
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
 		<AppDesignerFolder>Properties</AppDesignerFolder>
-		<TargetFrameworks>net9.0</TargetFrameworks>
+		<TargetFrameworks>net10.0</TargetFrameworks>
 		<LangVersion>preview</LangVersion>
 		<FileAlignment>512</FileAlignment>
 		<Deterministic>true</Deterministic>
@@ -96,6 +96,9 @@
 		</Reference>
 		<Reference Include="FrooxEngine.Store">
 			<HintPath>$(HeadlessData)FrooxEngine.Store.dll</HintPath>
+		</Reference>
+		<Reference Include="FrooxEngine.Commands">
+			<HintPath>$(HeadlessData)FrooxEngine.Commands.dll</HintPath>
 		</Reference>
 		<Reference Include="Elements.Assets">
 			<HintPath>$(HeadlessData)Elements.Assets.dll</HintPath>
