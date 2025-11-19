@@ -97,9 +97,6 @@
 		<Reference Include="FrooxEngine.Store">
 			<HintPath>$(HeadlessData)FrooxEngine.Store.dll</HintPath>
 		</Reference>
-		<Reference Include="FrooxEngine.Commands">
-			<HintPath>$(HeadlessData)FrooxEngine.Commands.dll</HintPath>
-		</Reference>
 		<Reference Include="Elements.Assets">
 			<HintPath>$(HeadlessData)Elements.Assets.dll</HintPath>
 		</Reference>
