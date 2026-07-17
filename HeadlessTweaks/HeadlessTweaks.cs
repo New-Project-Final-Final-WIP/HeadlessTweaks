@@ -58,7 +58,7 @@ namespace HeadlessTweaks
         // SessionIds to Name
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<Dictionary<string, string>> SessionIdToName = new("SessionIdToName", "SessionIdToName", () => []);
-            
+
         // Default session access level for new sessions
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<SessionAccessLevel> DefaultSessionAccessLevel = new("DefaultSessionAccessLevel", "Default Session Access Level", () => SessionAccessLevel.ContactsPlus);
@@ -77,6 +77,15 @@ namespace HeadlessTweaks
 
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<bool> AutoHandleInviteRequests = new("AutoHandleInviteRequests", "Allow headless tweaks automatically handle direct invite requests based on the same rules as reqInvite", () => true);
+
+        /// <summary>
+        /// Disables the interactive commandline.
+        /// </summary>
+        [AutoRegisterConfigKey]
+        public static readonly ModConfigurationKey<bool> DisableInteractivePrompt = new(
+            "DisableInteractivePrompt",
+            "Disables interactive console command behavior. Useful if you have no direct stdin access to your executable (i.e. systemd/Windows service). Requires a restart to take effect",
+            () => false);
 
         public override void OnEngineInit()
         {
@@ -101,7 +110,7 @@ namespace HeadlessTweaks
             }
 
             // If we are not loaded by a headless client skip the rest
-            if (!ModLoader.IsHeadless) 
+            if (!ModLoader.IsHeadless)
             {
                 Warn("Headless Not Detected! Skipping headless specific modules");
                 return;
@@ -111,6 +120,11 @@ namespace HeadlessTweaks
             MessageCommands.Init();
             AutoInviteOptOut.Init(harmony);
             SmartAutosave.Init(harmony);
+
+            if (config.GetValue(DisableInteractivePrompt))
+                DisableInteractiveCommandLine.Init(harmony);
+            else
+                Debug("Not applying non-interactive command line patch");
         }
     }
 }
